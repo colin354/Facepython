@@ -22,6 +22,11 @@ urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^admin/', admin.site.urls),
     url(r'api-token-auth', views.obtain_auth_token),
-    url(r'api/user/login',user.obtain_auth_token)
+    url(r'api/user/login',user.obtain_auth_token),
+    url(r'api/sys/user/info',user.obtain_user_info),
+    url(r'sys/user',user.upload_face),
+    url(r'sys/oss/upload',user.upload_face),
+    url(r'sys/stream/page',user.get_stream),
+    url(r'sys/stream',user.upload_face)
     # url(r'api/user/login', user.obtain_auth_token),
 ]
