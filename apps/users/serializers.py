@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
+from apps.users.models import Face
 
 class TokenSerializer(serializers.ModelSerializer):
     """
@@ -18,6 +19,18 @@ class TokenSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
 
+
     class Meta:
         model = User
         fields = ('id', 'username', 'first_name')
+
+class FaceSerializer(serializers.ModelSerializer):
+    """
+    人脸信息
+    """
+
+    class Meta:
+        model = Face
+        fields = ('username', 'mobile', 'imgurl', 'gender', 'email', 'flag', 'id', 'createDate')
+
+
