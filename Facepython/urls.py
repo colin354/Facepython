@@ -17,6 +17,7 @@ from django.conf.urls import url, include
 from django.contrib import admin
 from rest_framework.authtoken import views
 from users.api import user
+from users.api import match
 
 urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
@@ -25,8 +26,15 @@ urlpatterns = [
     url(r'api/user/login',user.obtain_auth_token),
     url(r'api/sys/user/info',user.obtain_user_info),
     url(r'sys/user',user.upload_face),
-    url(r'sys/oss/upload',user.upload_face),
+    url(r'api/face',user.upload_face),
+    url(r'img/upload',user.upload_face),
     url(r'sys/stream/page',user.get_stream),
-    url(r'sys/stream',user.upload_face)
+    url(r'sys/face/page',user.obtain_face_info),
+    url(r'sys/face/delete',user.upload_face),
+    url(r'sys/stream',user.upload_face),
+    url(r'api/face/status', user.obtain_face_status),
+    url(r'api/face_matching', match.face_match_info),
+    url(r'captcha', include('captcha.urls')),
+    url(r'refresh_captcha', user.obatin_captcha)
     # url(r'api/user/login', user.obtain_auth_token),
 ]
