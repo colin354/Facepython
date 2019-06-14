@@ -51,7 +51,6 @@ class Face(models.Model):
 
     username = models.CharField(max_length=255, verbose_name="用户名")
     mobile = models.CharField(max_length=11, verbose_name="手机号")
-    imgurl = models.URLField(verbose_name="照片地址")
     gender = models.BooleanField()
     email = models.EmailField()
     flag = models.IntegerField(choices=FLAG_CHOICE, default=0)
@@ -59,5 +58,14 @@ class Face(models.Model):
 
     class Meta:
         verbose_name = "人脸数据"
+        verbose_name_plural = verbose_name
+
+class FaceImg(models.Model):
+
+    userid = models.ForeignKey('Face', on_delete=models.CASCADE)
+    imgurl = models.URLField(verbose_name="照片地址")
+
+    class Meta:
+        verbose_name = "人脸图片地址"
         verbose_name_plural = verbose_name
 

@@ -8,55 +8,150 @@ from django.contrib.auth.models import User
 from apps.users.serializers import FaceSerializer
 from rest_framework.parsers import JSONParser
 from apps.users.utility import TokenVerify
+from apps.users.models import FaceImg as FaceImgModel
+import os, shutil
 import pdb
 
-class FaceImgUpload(APIView):
+class FaceImg(APIView):
 
     TOKEN = 'token'
 
     @TokenVerify
     def post(self, request, *args, **kwargs):
+        UUID = request.GET.get("uuid")
+        if UUID == None:
+            return JsonResponse(data={}, code="-1", msg="失败 缺少uuid")
         if request.FILES.get('file') != None:
+            file_dir = settings.BASE_DIR+'/media/temp/'+UUID
             src = request.FILES['file']
-            with open(settings.BASE_DIR+'/media/'+src.name ,'wb+') as f:
+            if os.path.exists(file_dir) == False:
+                os.makedirs(file_dir)
+            with open(settings.BASE_DIR+'/media/temp/'+UUID+'/'+src.name ,'wb+') as f:
                 for chunk in src.chunks():
                     f.write(chunk)
                 pass
-        data = {'imgurl':'http://192.17.1.150:8000/'+'media/'+request.FILES['file'].name}
+        else:
+            return JsonResponse(data={}, code='-1', msg="失败 不是图片")
+        imgurl = settings.FACE_IMG_ROOT_URL + 'temp/'+UUID+'/'+src.name
+        data = {'imgurl':imgurl}
         return JsonResponse(data=data, code="999999", msg="成功")
+
+    @TokenVerify
+    def delete(self, request, *args, **kwargs):
+        UUID = request.GET.get("uuid")
+        if UUID == None:
+            UUID = request.GET.get("id")
+            # 需要额外的逻辑确保删除权限
+            if UUID != None:
+                pass
+        if UUID == None:
+            return JsonResponse(data={}, code="-1", msg="失败 缺少uuid")
+        # img/  删除所有uuid下的文件
+        if len(request.path_info.strip('/').split('/')) == 1:
+            file_dir = settings.BASE_DIR+'/media/temp/'+UUID
+            def handleRmtree(func, path, exc_info):
+                print(path, exc_info)
+            shutil.rmtree(file_dir, ignore_errors=False, onerror=handleRmtree)
+            return JsonResponse(data={}, code='999999', msg="成功")
+        # img/uuid/img.type 删除某一个文件
+        else:
+            img = request.path_info.strip('/').split('/')[-1]
+            file_addr = settings.BASE_DIR+'/media/temp/'+ UUID + '/'+img
+            os.remove(file_addr)
+            return JsonResponse(data={}, code='999999', msg="成功")
 
 class FaceView(APIView):
     TOKEN = 'token'
 
     @TokenVerify
     def post(self, request, *args, **kwargs):
+
         serializer = FaceSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
+            UUID = request.GET.get("uuid")
+            if UUID == None:
+                return JsonResponse(data={}, code="-1", msg="失败 缺少uuid")
+            # 重新命名文件夹
+            src_file_dir = settings.BASE_DIR+'/media/temp/'+UUID
+            des_file_dir = settings.BASE_DIR+'/media/'+str(serializer.data['id'])
+            os.renames(src_file_dir, des_file_dir)
+            # 获取外键，图片url前缀
+            uid = serializer.data['id']
+            face = Face.objects.get(pk=uid)
+            imgurlRoot = settings.FACE_IMG_ROOT_URL + str(uid)
+            # 保存图片
+            for name in os.listdir(des_file_dir):
+                faceImgModel = FaceImgModel(userid=face, imgurl=imgurlRoot+'/'+name)
+                faceImgModel.save()
             return JsonResponse(data={}, code="999999", msg="成功")
         return JsonResponse(data=serializer.errors, code="-1", msg="失败")
 
     @TokenVerify
-    def get(self, request, format=None):
+    def get(self, request, *args, **kwargs):
+        # 获取所有人脸的信息
         if request.path_info.strip('/').split('/')[-1].isdigit() == False:
             faces = Face.objects.all()
             serializer = FaceSerializer(faces, many=True)
+            for i in range(len(serializer.data)):
+                imgurlRoot = settings.FACE_IMG_ROOT_URL + str(serializer.data[i]['id'])
+                serializer.data[i]['imgdir'] = imgurlRoot
+                serializer.data[i]['imgurls'] = self.dealImgUrls(list(FaceImgModel.objects.filter(userid__exact=serializer.data[i]['id']).values_list('imgurl')))
             return JsonResponse(data={'list': serializer.data, 'count': len(serializer.data)}, code='999999', msg='success')
+        # 获取某一个具体人脸的信息
         else:
+            # 注意rest返回的serializer.data 是固定的，不会修改， 所以copy一下
             face_id = int(request.path_info.split('/')[-1])
             face = Face.objects.get(id=face_id)
             serializer = FaceSerializer(face)
-            return JsonResponse(data=serializer.data, code='999999', msg='success')
+            data = serializer.data
+            imgurlRoot = settings.FACE_IMG_ROOT_URL + str(serializer.data['id'])
+            data['imgdir'] = imgurlRoot
+            data['imgurls'] = self.dealImgUrls(list(FaceImgModel.objects.filter(userid__exact=serializer.data['id']).values_list('imgurl')))
+            return JsonResponse(data=data, code='999999', msg='success')
+
+    def dealImgUrls(self, imgUrls):
+        res = []
+        for v in imgUrls:
+            res.append({'name':v[0].split('/')[-1], 'url':v[0]})
+        return res
+
 
     @TokenVerify
     def put(self, request, *args, **kwargs):
+        UUID = request.GET.get("uuid")
+        if UUID == None:
+            return JsonResponse(data={}, code="-1", msg="失败 缺少uuid")
+        # 人脸信息更新
         face = Face.objects.get(id=request.data['id'])
         request.data['flag'] = Face.UPDATE
         serializer = FaceSerializer(face, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return JsonResponse(data={}, code="999999", msg="成功")
-        return JsonResponse(data=serializer.errors, code="-1", msg="失败")
+        else:
+            return JsonResponse(data=serializer.errors, code="-1", msg="失败")
+        # 移动UUID临时目录下的新上传的文件到具体保存地址
+        src_file_dir = settings.BASE_DIR+'/media/temp/'+UUID
+        des_file_dir = settings.BASE_DIR+'/media/'+str(serializer.data['id'])
+        for imgFile in os.listdir(src_file_dir):
+            shutil.move(src_file_dir+'/'+imgFile, des_file_dir)
+        shutil.rmtree(src_file_dir)
+
+        # 保存额外上传的人脸图片
+        # 获取外键，图片url前缀
+        uid = serializer.data['id']
+        des_file_dir = settings.BASE_DIR+'/media/'+str(serializer.data['id'])
+        face = Face.objects.get(pk=uid)
+        imgurlRoot = settings.FACE_IMG_ROOT_URL + str(uid)
+        # 保存图片
+        for name in os.listdir(des_file_dir):
+            # 已经有此图片
+            if len(FaceImgModel.objects.filter(imgurl__exact=imgurlRoot+'/'+name)) > 0:
+                continue
+            # 没有在数据库保存，现在保存一下
+            faceImgModel = FaceImgModel(userid=face, imgurl=imgurlRoot+'/'+name)
+            faceImgModel.save()
+        return JsonResponse(data={}, code="999999", msg="成功")
 
     @TokenVerify
     def delete(self, request, *args, **kwargs):
@@ -66,5 +161,6 @@ class FaceView(APIView):
         return JsonResponse(data={}, code='999999', msg='成功')
 
 
-face_img_upload = FaceImgUpload.as_view()
+face_img = FaceImg.as_view()
 faces = FaceView.as_view()
+

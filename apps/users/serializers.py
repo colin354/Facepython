@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 from apps.users.models import Face
+from apps.users.models import FaceImg
 
 class TokenSerializer(serializers.ModelSerializer):
     """
@@ -31,6 +32,12 @@ class FaceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Face
-        fields = ('username', 'mobile', 'imgurl', 'gender', 'email', 'flag', 'id', 'createDate')
+        fields = ('username', 'mobile', 'gender', 'email', 'flag', 'id', 'createDate')
 
-
+class FaceImgSerializer(serializers.ModelSerializer):
+    """
+    人脸图片信息
+    """
+    class Meta:
+        model = FaceImg
+        fields = ('userid', 'imgurl')
