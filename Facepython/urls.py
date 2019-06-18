@@ -29,7 +29,6 @@ urlpatterns = [
     url(r'^api/sys/user/info',user.user_profile),
     url(r'^api/user\/(?P<id>[0-9]+)/$',user.user_profile),
     url(r'^api/face',face.faces),
-    url(r'^api/stream',stream.stream),
     url(r'^img',face.face_img),
     url(r'^api/check', check.check_face),
     url(r'^captcha',include('captcha.urls')),
