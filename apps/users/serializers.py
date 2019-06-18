@@ -3,6 +3,7 @@ from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 from apps.users.models import Face
 from apps.users.models import FaceImg
+from apps.users.models import Check
 
 class TokenSerializer(serializers.ModelSerializer):
     """
@@ -33,6 +34,12 @@ class FaceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Face
         fields = ('username', 'mobile', 'gender', 'email', 'flag', 'id', 'createDate')
+
+class CheckSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Check
+        fields = ('timestap', 'c_x', 'c_y', 'c_w', 'c_h', 'c_ip' 'c_gender', 'c_age', 'c_threshold', 'streamid', 'faceid')
 
 class FaceImgSerializer(serializers.ModelSerializer):
     """

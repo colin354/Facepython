@@ -69,3 +69,32 @@ class FaceImg(models.Model):
         verbose_name = "人脸图片地址"
         verbose_name_plural = verbose_name
 
+class Stream(models.Model):
+    streamname = models.CharField(max_length=50, null=True, blank=True, verbose_name="流名称")
+    streamlocation = models.CharField(max_length=100, null=True, blank=True, verbose_name="流名称")
+    streamurl = models.CharField(max_length=100, null=True, blank=True, verbose_name="流名称")
+    streamlat = models.CharField(max_length=10, null=True, blank=True, verbose_name="流定位lat")
+    streamlon = models.CharField(max_length=10, null=True, blank=True, verbose_name="流定位lon")
+    createDate = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "流信息"
+        verbose_name_plural = verbose_name
+
+class Check(models.Model):
+
+    faceid = models.ForeignKey('Face', on_delete=models.CASCADE)
+    streamid = models.ForeignKey('Stream', on_delete=models.CASCADE)
+    timestap = models.CharField(max_length=100, verbose_name="时间戳")
+    c_x = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框x")
+    c_y = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框y")
+    c_w = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框w")
+    c_h = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框h")
+    c_ip = models.CharField(max_length=15, null=True, blank=True, verbose_name="ip")
+    c_gender = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测性别")
+    c_age = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测年龄")
+    c_threshold = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测阈值")
+
+    class Meta:
+        verbose_name = "匹配信息"
+        verbose_name_plural = verbose_name
