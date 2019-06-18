@@ -39,25 +39,37 @@ class FaceImg(APIView):
     @TokenVerify
     def delete(self, request, *args, **kwargs):
         UUID = request.GET.get("uuid")
-        if UUID == None:
-            UUID = request.GET.get("id")
-            # 需要额外的逻辑确保删除权限
-            if UUID != None:
-                pass
-        if UUID == None:
-            return JsonResponse(data={}, code="-1", msg="失败 缺少uuid")
-        # img/  删除所有uuid下的文件
-        if len(request.path_info.strip('/').split('/')) == 1:
-            file_dir = settings.BASE_DIR+'/media/temp/'+UUID
-            def handleRmtree(func, path, exc_info):
-                print(path, exc_info)
-            shutil.rmtree(file_dir, ignore_errors=False, onerror=handleRmtree)
-            return JsonResponse(data={}, code='999999', msg="成功")
-        # img/uuid/img.type 删除某一个文件
-        else:
+        userid = request.GET.get("id")
+        # 新增用户时删除上传头像
+        if userid == None or userid == '':
+            if UUID == None:
+                return JsonResponse(data={}, code="-1", msg="失败 缺少uuid")
+            # img/  删除所有uuid下的文件
+            if len(request.path_info.strip('/').split('/')) == 1:
+                file_dir = settings.BASE_DIR+'/media/temp/'+UUID
+                def handleRmtree(func, path, exc_info):
+                    print(path, exc_info)
+                shutil.rmtree(file_dir, ignore_errors=False, onerror=handleRmtree)
+                return JsonResponse(data={}, code='999999', msg="成功")
+            # img/uuid/img.type 删除某一个文件
+            else:
+                img = request.path_info.strip('/').split('/')[-1]
+                file_addr = settings.BASE_DIR+'/media/temp/'+ UUID + '/'+img
+                os.remove(file_addr)
+                return JsonResponse(data={}, code='999999', msg="成功")
+        # 修改用户时删除头像
+        if userid != None:
             img = request.path_info.strip('/').split('/')[-1]
-            file_addr = settings.BASE_DIR+'/media/temp/'+ UUID + '/'+img
-            os.remove(file_addr)
+            file_addr_in_temp = settings.BASE_DIR+'/media/temp/'+ UUID + '/'+img
+            file_addr_not_in_temp = settings.BASE_DIR+'/media/'+ userid + '/'+img
+            print(file_addr_in_temp)
+            print(file_addr_not_in_temp)
+            if os.path.isfile(file_addr_in_temp):
+                os.remove(file_addr_in_temp)
+            if os.path.isfile(file_addr_not_in_temp):
+                imgurl = settings.FACE_IMG_ROOT_URL + str(userid)+'/'+img
+                FaceImgModel.objects.filter(imgurl__exact=imgurl).delete()
+                os.remove(file_addr_not_in_temp)
             return JsonResponse(data={}, code='999999', msg="成功")
 
 class FaceView(APIView):
@@ -133,9 +145,14 @@ class FaceView(APIView):
         # 移动UUID临时目录下的新上传的文件到具体保存地址
         src_file_dir = settings.BASE_DIR+'/media/temp/'+UUID
         des_file_dir = settings.BASE_DIR+'/media/'+str(serializer.data['id'])
-        for imgFile in os.listdir(src_file_dir):
-            shutil.move(src_file_dir+'/'+imgFile, des_file_dir)
-        shutil.rmtree(src_file_dir)
+        # 先判断是否存在目的目录
+        if os.path.isdir(des_file_dir) == False:
+            os.makedirs(des_file_dir)
+        # 先判断是否存在目录（是否上传了新文件）
+        if os.path.isdir(src_file_dir) == True:
+            for imgFile in os.listdir(src_file_dir):
+                shutil.move(src_file_dir+'/'+imgFile, des_file_dir)
+            shutil.rmtree(src_file_dir)
 
         # 保存额外上传的人脸图片
         # 获取外键，图片url前缀
@@ -143,7 +160,7 @@ class FaceView(APIView):
         des_file_dir = settings.BASE_DIR+'/media/'+str(serializer.data['id'])
         face = Face.objects.get(pk=uid)
         imgurlRoot = settings.FACE_IMG_ROOT_URL + str(uid)
-        # 保存图片
+        # 保存图片 先判断是否存在目录（是否上传了新文件）
         for name in os.listdir(des_file_dir):
             # 已经有此图片
             if len(FaceImgModel.objects.filter(imgurl__exact=imgurlRoot+'/'+name)) > 0:
