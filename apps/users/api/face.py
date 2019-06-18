@@ -104,6 +104,7 @@ class FaceView(APIView):
         # 获取所有人脸的信息
         if request.path_info.strip('/').split('/')[-1].isdigit() == False:
             faces = Face.objects.all()
+            #print(faces)
             serializer = FaceSerializer(faces, many=True)
             for i in range(len(serializer.data)):
                 imgurlRoot = settings.FACE_IMG_ROOT_URL + str(serializer.data[i]['id'])

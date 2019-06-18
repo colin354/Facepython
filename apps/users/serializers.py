@@ -4,6 +4,7 @@ from rest_framework.authtoken.models import Token
 from apps.users.models import Face
 from apps.users.models import FaceImg
 from apps.users.models import Check
+from apps.users.models import Stream
 
 class TokenSerializer(serializers.ModelSerializer):
     """
@@ -48,3 +49,10 @@ class FaceImgSerializer(serializers.ModelSerializer):
     class Meta:
         model = FaceImg
         fields = ('userid', 'imgurl')
+class StreamSerializer(serializers.ModelSerializer):
+    """
+    流信息
+    """
+    class Meta:
+        model = Stream
+        fields = ('id','streamname','streamlocation','streamurl','streamlat','streamlon','createDate')

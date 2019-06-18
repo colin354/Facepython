@@ -16,16 +16,14 @@ Including another URLconf
 from django.conf.urls import url, include
 from django.contrib import admin
 from rest_framework.authtoken import views
-from users.api import user
-from users.api import face
-from users.api import stream
+from users.api import user,face,stream
+#from users.api import face
 from django.conf.urls.static import static
 from django.conf import settings
 from users.api import check
 urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^admin/', admin.site.urls),
-    url(r"^captcha/", include('captcha.urls')),
     url(r'^api-token-auth', views.obtain_auth_token),
     url(r'^api/user/login',user.obtain_auth_token),
     url(r'^api/sys/user/info',user.user_profile),
@@ -34,5 +32,9 @@ urlpatterns = [
     url(r'^api/stream',stream.stream),
     url(r'^img',face.face_img),
     url(r'^api/check', check.check_face),
+    url(r'^captcha',include('captcha.urls')),
+    url(r'^captcha/code',user.verification_code),
     # url(r'api/user/login', user.obtain_auth_token),
+    url(r'^sys/stream/page',stream.stream_list),#获取数据库信息URL
+    url(r'^sys/stream',stream.stream_add),#增删改URL
 ] + static(settings.MEDIA_URL, document_root = settings.BASE_DIR + settings.MEDIA_URL)

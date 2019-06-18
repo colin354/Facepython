@@ -6,6 +6,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
+from django.contrib import admin
+
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
@@ -28,7 +30,7 @@ class VerifyCode(models.Model):
     """
     短信验证码
     """
-    code = models.CharField(max_length=10, verbose_name="验证码")
+    code = models.CharField(max_length=10, verbose_name="验证码" )
     mobile = models.CharField(max_length=11, verbose_name="电话")
 
     class Meta:
@@ -69,18 +71,6 @@ class FaceImg(models.Model):
         verbose_name = "人脸图片地址"
         verbose_name_plural = verbose_name
 
-class Stream(models.Model):
-    streamname = models.CharField(max_length=50, null=True, blank=True, verbose_name="流名称")
-    streamlocation = models.CharField(max_length=100, null=True, blank=True, verbose_name="流名称")
-    streamurl = models.CharField(max_length=100, null=True, blank=True, verbose_name="流名称")
-    streamlat = models.CharField(max_length=10, null=True, blank=True, verbose_name="流定位lat")
-    streamlon = models.CharField(max_length=10, null=True, blank=True, verbose_name="流定位lon")
-    createDate = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        verbose_name = "流信息"
-        verbose_name_plural = verbose_name
-
 class Check(models.Model):
 
     faceid = models.ForeignKey('Face', on_delete=models.CASCADE)
@@ -98,3 +88,26 @@ class Check(models.Model):
     class Meta:
         verbose_name = "匹配信息"
         verbose_name_plural = verbose_name
+
+class Stream(models.Model):
+    """
+    流信息
+    """
+    NEW, UPDATE, DELETE = 0, 1, 2
+    FLAG_CHOICE = (
+        (0, 'new'),
+        (1, 'update'),
+        (2, 'delete'),
+    )
+    streamname     = models.CharField(max_length=50, verbose_name="流名称", unique = True)
+    streamlocation = models.CharField(max_length=100, verbose_name="流位置")
+    streamurl      = models.CharField(max_length=100, verbose_name="流url")
+    streamlat      = models.CharField(max_length = 24 , verbose_name= "纬度",blank=True)
+    streamlon      = models.CharField(max_length = 24 , verbose_name= "经度",blank=True)
+    flag = models.IntegerField(choices=FLAG_CHOICE, default=0)
+    createDate     = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name        = "流信息"
+        verbose_name_plural = verbose_name
+
