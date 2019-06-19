@@ -9,10 +9,9 @@ from apps.users.utility import TokenVerify
 
 class StreamAddorupload(APIView):
     TOKEN = 'token'
-#调用Token验证
-    @TokenVerify
-
 #新增功能
+    # 调用Token验证
+    @TokenVerify
     def post(self, request, *args, **kwargs):
         serializer = StreamSerializer(data=request.data)
         if serializer.is_valid():
@@ -21,6 +20,8 @@ class StreamAddorupload(APIView):
         return JsonResponse(data=serializer.errors, code="-1", msg="失败")
 
 #修改功能
+    # 调用Token验证
+    @TokenVerify
     def put(self, request, *args, **kwargs):
         request.data['flag'] = Stream.UPDATE
         stream = Stream.objects.get(id=request.data['id'])
@@ -31,6 +32,8 @@ class StreamAddorupload(APIView):
         return JsonResponse(data=serializer.errors, code="-1", msg="失败")
 
 #删除功能（逻辑删除）
+    # 调用Token验证
+    @TokenVerify
     def delete(self, request, *args, **kwargs):
         for data_id in request.data:
             stream = Stream.objects.get(id=data_id)
@@ -41,11 +44,9 @@ class StreamAddorupload(APIView):
 
 class StreamView(APIView):
     TOKEN = 'token'
-
-#调用Token验证
-    @TokenVerify
-
 #显示列表信息
+    # 调用Token验证
+    @TokenVerify
     def get(self, request, *args, **kwargs):
         print(request.GET)
         if request.path_info.strip('/').split('/')[-1].isdigit() == False:
