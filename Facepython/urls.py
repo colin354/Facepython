@@ -36,4 +36,4 @@ urlpatterns = [
     # url(r'api/user/login', user.obtain_auth_token),
     url(r'^sys/stream/page',stream.stream_list),#获取数据库信息URL
     url(r'^sys/stream',stream.stream_add),#增删改URL
-] + static(settings.MEDIA_URL, document_root = settings.BASE_DIR + settings.MEDIA_URL)
+] + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)
