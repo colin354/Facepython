@@ -17,7 +17,6 @@ def TokenVerify(func):
             user_id = Token.objects.get(key=token).user_id
         except ObjectDoesNotExist as e:
             return JsonResponse(data={}, code="-1", msg='token错误')
-        print("token 验证通过")
         return func(self, *args, **kwargs)
     return handler
 

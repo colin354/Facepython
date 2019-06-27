@@ -10,3 +10,5 @@ Pillow==6.0.0
 PyJWT==1.7.1
 pytz==2019.1
 sqlparse==0.3.0
+gunicorn==19.9.0
+django-simple-captcha==0.5.11

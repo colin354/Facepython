@@ -18,6 +18,7 @@ from django.contrib import admin
 from rest_framework.authtoken import views
 from users.api import user,face,stream
 #from users.api import face
+from django.views.generic import TemplateView
 from django.conf.urls.static import static
 from django.conf import settings
 from users.api import check
@@ -34,6 +35,6 @@ urlpatterns = [
     url(r'^captcha',include('captcha.urls')),
     url(r'^captcha/code',user.verification_code),
     # url(r'api/user/login', user.obtain_auth_token),
-    url(r'^sys/stream/page',stream.stream_list),#获取数据库信息URL
-    url(r'^sys/stream',stream.stream_add),#增删改URL
-] + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)
+    url(r'^sys/stream/page',stream.stream_list), #获取数据库信息URL
+    url(r'^sys/stream',stream.stream_add),
+    url(r'^$', TemplateView.as_view(template_name="index.html"))] + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

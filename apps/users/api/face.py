@@ -62,8 +62,6 @@ class FaceImg(APIView):
             img = request.path_info.strip('/').split('/')[-1]
             file_addr_in_temp = settings.BASE_DIR+'/media/temp/'+ UUID + '/'+img
             file_addr_not_in_temp = settings.BASE_DIR+'/media/'+ userid + '/'+img
-            print(file_addr_in_temp)
-            print(file_addr_not_in_temp)
             if os.path.isfile(file_addr_in_temp):
                 os.remove(file_addr_in_temp)
             if os.path.isfile(file_addr_not_in_temp):
