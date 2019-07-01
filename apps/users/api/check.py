@@ -1,70 +1,75 @@
 from rest_framework.views import APIView
 from users.common.api_response import JsonResponse
 from apps.users.serializers import CheckSerializer
-from apps.users.models import Check
-from apps.users.utility import TokenVerify
+from apps.users.models import Check as CheckModel
+from apps.users.models import FaceImg as FaceImgModel
+import ipdb
+from urllib.parse import urlparse
+
+class Check(APIView):
+
+    def post(self, request, *args, **kwargs):
+        serializer = CheckSerializer(data=request.data)
+        if serializer.is_valid():
+            #这里可以解析post上传数据，再存储，目前做个简单的
+            serializer.save()
+            return JsonResponse(data={}, code="999999", msg="成功")
+        return JsonResponse(data=serializer.errors, code="999999", msg="失败")
+
+    def get(self, request, *args, **kwargs):
+        # 获取所有人脸的信息
+        faceid = request.GET.get('faceid')
+        streamid = request.GET.get('streamid')
+        faceid = str(faceid)
+        streamid = str(streamid)
+        # ipdb.set_trace()
+        #按流查询后端返回数据
+        streamurl = request.GET.get('streamurl')
+        if streamurl:
+            url_path = urlparse(streamurl).path
+            print(url_path)
+            checks = CheckModel.objects.filter(url = url_path)
+            #checks = CheckModel.objects.filter(url=streamurl)
+            serializer =getmarkers(checks)
+            print(serializer)
+            return JsonResponse(data={'list': serializer, 'count': len(serializer)}, code='999999',
+                                msg='success')
+        elif (faceid =='None' or faceid == '') and (streamid == 'None' or streamid == ''):
+            print('1111111111111111111111111111111111111111')
+            checks = CheckModel.objects.values('faceid', 'streamid', 'url').distinct()
+            return JsonResponse(data={'list': checks, 'count': len(checks)}, code='999999', msg='success')
+        # 获取某一个具体人脸的信息
+        elif ((faceid != 'None' or faceid != '') and (streamid == 'None' or streamid == '')):
+            print('22222222222222222222222222222222222222222222222222')
+            checks = CheckModel.objects.filter(faceid=faceid).values('faceid','streamid','url').distinct()
+            return JsonResponse(data={'list': list(checks), 'count': len(checks)}, code='999999', msg='success')
+        elif ((faceid != 'None' or faceid != '') and (streamid != 'None' or streamid != '')):
+            print('33333333333333333333333333333333333333333333333333')
+            checks = CheckModel.objects.filter(faceid=faceid, streamid=streamid).values('faceid', 'time')
+            checks_list = list(checks)
+            for ind, item in enumerate(checks_list):
+                imgs = FaceImgModel.objects.filter(userid_id=item['faceid']).values('id', 'imgurl')
+                checks_list[ind]['imgList'] = list(imgs)
+            return JsonResponse(data={'list': list(checks_list), 'count': len(checks_list)}, code='999999', msg='success')
+        else:
+            return JsonResponse(data={}, code="999999", msg="成功")
 
 #按流查询后端数据处理过程
 def getmarkers(data):
+    print('getmarkers!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     res = []
     for marker in data:
         newlist = {}
         for marker_data in res:
             if marker.time == marker_data['time']:
 
-                newlist = {'id':marker.faceid,'imgurl':marker.imgurl}
+                newlist = {'id':marker.faceid,'imgurl':'http://10.2.151.139:8888'+marker.imgurl}
                 marker_data['imgList'].append(newlist)
                 break
         if newlist:
             print('same time')
         else:
-            res.append({'time': marker.time, 'text': marker.c_threshold,'imgList':[{'id':marker.faceid,'imgurl':marker.imgurl}],
+            res.append({'time': marker.time, 'text': marker.c_threshold,'imgList':[{'id':marker.faceid,'imgurl':'http://10.2.151.139:8888'+marker.imgurl}],
                             'width':"50%"})
     return res
-
-class CheckView(APIView):
-
-    # 调用Token验证
-    @TokenVerify
-    #???????????????????
-    def post(self, request, *args, **kwargs):
-        serializer = CheckSerializer(data=request.data)
-        print(request.data)
-        if serializer.is_valid():
-        #这里可以解析post上传数据，再存储，目前做个简单的
-            serializer.save()
-            print("save")
-            return JsonResponse(data={}, code="999999", msg="成功")
-        return JsonResponse(data=serializer.errors, code="999999", msg="成功")
-
-    # 调用Token验证
-    @TokenVerify
-    #前端查询（分按流查询以及按人脸查询）
-    def get(self, request, *args, **kwargs):
-        #按流查询后端返回数据
-        # if len(request.path_info.split('/')) > 6:
-        #     print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        #     print(request.path_info.split('/'))
-        #     streamurl = request.path_info.split('/')[3]+'//'+ request.path_info.split('/')[5]+'/'+request.path_info.split('/')[6]
-        #     print(streamurl)
-        streamurl = request.GET.get("streamurl",default = None)
-        if streamurl:
-            checks = Check.objects.filter(url=streamurl)
-            #print(checks)
-            serializer =getmarkers(checks)
-            #print("serializer = ",serializer)
-            return JsonResponse(data={'list': serializer, 'count': len(serializer)}, code='999999',
-                                msg='success')
-        else:
-            print('NO Streamurl')
-            return JsonResponse(data={}, code='999999',
-                                msg='success')
-        # checks = Check.objects.all()
-        # streamurls = Check.objects.values_list('url','faceid')
-        # print(checks)
-        # print(streamurls)
-        # serializer = CheckSerializer(checks,many=True)
-        # #return JsonResponse(data = serializer,code = '999999',msg = 'success')
-        # return JsonResponse(data={'list': serializer.data, 'count': len(serializer.data)}, code='999999', msg='success')
-
-check_face = CheckView.as_view()
+check_face = Check.as_view()

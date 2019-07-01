@@ -86,7 +86,7 @@ class Check(models.Model):
     c_gender = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测性别")
     c_age = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测年龄")
     c_threshold = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测阈值")
-    time = models.CharField(max_length=100, verbose_name="时间点")
+    time = models.IntegerField(verbose_name="时间" , null=True)
     url = models.CharField(max_length=100, verbose_name="流url")
     imgurl = models.CharField(max_length=100, verbose_name="图片url")
 
