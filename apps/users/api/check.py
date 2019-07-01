@@ -6,12 +6,11 @@ from apps.users.utility import TokenVerify
 
 #按流查询后端数据处理过程
 def getmarkers(data):
-    print('getmarkers!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     res = []
     for marker in data:
         newlist = {}
         for marker_data in res:
-            if marker.timestap == marker_data['time']:
+            if marker.time == marker_data['time']:
 
                 newlist = {'id':marker.faceid,'imgurl':marker.imgurl}
                 marker_data['imgList'].append(newlist)
@@ -48,17 +47,12 @@ class CheckView(APIView):
         #     print(request.path_info.split('/'))
         #     streamurl = request.path_info.split('/')[3]+'//'+ request.path_info.split('/')[5]+'/'+request.path_info.split('/')[6]
         #     print(streamurl)
-        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         streamurl = request.GET.get("streamurl",default = None)
-        print(streamurl)
         if streamurl:
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            # checks = Check.objects.filter(url=streamurl)
             checks = Check.objects.filter(url=streamurl)
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            print(checks)
+            #print(checks)
             serializer =getmarkers(checks)
-            print("serializer = ",serializer)
+            #print("serializer = ",serializer)
             return JsonResponse(data={'list': serializer, 'count': len(serializer)}, code='999999',
                                 msg='success')
         else:
