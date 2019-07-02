@@ -3,8 +3,8 @@ from users.common.api_response import JsonResponse
 from apps.users.serializers import CheckSerializer
 from apps.users.models import Check as CheckModel
 from apps.users.models import FaceImg as FaceImgModel
+from apps.users.models import Stream as StreamModel
 import ipdb
-from urllib.parse import urlparse
 
 class Check(APIView):
 
@@ -24,27 +24,22 @@ class Check(APIView):
         streamid = str(streamid)
         # ipdb.set_trace()
         #按流查询后端返回数据
-        streamurl = request.GET.get('streamurl')
-        if streamurl:
-            url_path = urlparse(streamurl).path
-            print(url_path)
-            checks = CheckModel.objects.filter(url = url_path)
-            #checks = CheckModel.objects.filter(url=streamurl)
+        #如果只有streamid,没有faceid
+        if (faceid =='None' or faceid == '') and (streamid != 'None' and streamid != ''):
+            checks = CheckModel.objects.filter(streamid=streamid)
             serializer =getmarkers(checks)
-            print(serializer)
             return JsonResponse(data={'list': serializer, 'count': len(serializer)}, code='999999',
                                 msg='success')
+        #faceid和streamid都没有
         elif (faceid =='None' or faceid == '') and (streamid == 'None' or streamid == ''):
-            print('1111111111111111111111111111111111111111')
             checks = CheckModel.objects.values('faceid', 'streamid', 'url').distinct()
             return JsonResponse(data={'list': checks, 'count': len(checks)}, code='999999', msg='success')
-        # 获取某一个具体人脸的信息
-        elif ((faceid != 'None' or faceid != '') and (streamid == 'None' or streamid == '')):
-            print('22222222222222222222222222222222222222222222222222')
+        # 获取某一个具体人脸的信息，只有faceid，没有streamid
+        elif ((faceid != 'None' and faceid != '') and (streamid == 'None' or streamid == '')):
             checks = CheckModel.objects.filter(faceid=faceid).values('faceid','streamid','url').distinct()
             return JsonResponse(data={'list': list(checks), 'count': len(checks)}, code='999999', msg='success')
+        #faceid和streamid都有
         elif ((faceid != 'None' or faceid != '') and (streamid != 'None' or streamid != '')):
-            print('33333333333333333333333333333333333333333333333333')
             checks = CheckModel.objects.filter(faceid=faceid, streamid=streamid).values('faceid', 'time')
             checks_list = list(checks)
             for ind, item in enumerate(checks_list):
