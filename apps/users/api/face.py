@@ -89,7 +89,7 @@ class FaceView(APIView):
             # 获取外键，图片url前缀
             uid = serializer.data['id']
             face = Face.objects.get(pk=uid)
-            imgurlRoot = settings.FACE_IMG_ROOT_URL + str(uid)
+            imgurlRoot = settings.FACE_IMG_ROOT_URL + 'image/' + str(uid)
             # 保存图片
             for name in os.listdir(des_file_dir):
                 faceImgModel = FaceImgModel(userid=face, imgurl=imgurlRoot+'/'+name)
@@ -158,7 +158,7 @@ class FaceView(APIView):
         uid = serializer.data['id']
         des_file_dir = settings.MEDIA_ROOT+'/image/'+str(serializer.data['id'])
         face = Face.objects.get(pk=uid)
-        imgurlRoot = settings.FACE_IMG_ROOT_URL + str(uid)
+        imgurlRoot = settings.FACE_IMG_ROOT_URL + 'image/' + str(uid)
         # 保存图片 先判断是否存在目录（是否上传了新文件）
         for name in os.listdir(des_file_dir):
             # 已经有此图片

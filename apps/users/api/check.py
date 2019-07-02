@@ -15,6 +15,7 @@ class Check(APIView):
             #这里可以解析post上传数据，再存储，目前做个简单的
             serializer.save()
             return JsonResponse(data={}, code="999999", msg="成功")
+        print(serializer.errors)
         return JsonResponse(data=serializer.errors, code="999999", msg="失败")
 
     def get(self, request, *args, **kwargs):
@@ -37,10 +38,12 @@ class Check(APIView):
         # 获取某一个具体人脸的信息，只有faceid，没有streamid
         elif ((faceid != 'None' and faceid != '') and (streamid == 'None' or streamid == '')):
             checks = CheckModel.objects.filter(faceid=faceid).values('faceid','streamid','url').distinct()
-            return JsonResponse(data={'list': list(checks), 'count': len(checks)}, code='999999', msg='success')
+            imgs = FaceImgModel.objects.filter(userid_id=faceid).values('id', 'imgurl')
+            imgs = list(imgs)
+            return JsonResponse(data={'list': list(checks), 'count': len(checks), 'imgList':imgs}, code='999999', msg='success')
         #faceid和streamid都有
-        elif ((faceid != 'None' or faceid != '') and (streamid != 'None' or streamid != '')):
-            checks = CheckModel.objects.filter(faceid=faceid, streamid=streamid).values('faceid', 'time')
+        elif ((faceid != 'None' and faceid != '') and (streamid != 'None' and streamid != '')):
+            checks = CheckModel.objects.filter(faceid=faceid, streamid=streamid).values('faceid', 'time', 'imgurl')
             checks_list = list(checks)
             for ind, item in enumerate(checks_list):
                 imgs = FaceImgModel.objects.filter(userid_id=item['faceid']).values('id', 'imgurl')

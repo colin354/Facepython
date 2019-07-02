@@ -40,7 +40,7 @@ class CheckSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Check
-        fields = ('timestap', 'c_x', 'c_y', 'c_w', 'c_h', 'c_ip', 'c_gender', 'c_age', 'c_threshold', 'streamid', 'faceid', 'id', 'url', 'imgurl')
+        fields = ('timestap', 'c_x', 'c_y','time', 'c_w', 'c_h', 'c_ip', 'c_gender', 'c_age', 'c_threshold', 'streamid', 'faceid', 'id', 'url', 'imgurl')
 
 class FaceImgSerializer(serializers.ModelSerializer):
     """

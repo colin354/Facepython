@@ -78,7 +78,7 @@ class Check(models.Model):
     faceid = models.CharField(max_length=10, verbose_name='人脸ID')
     streamid = models.CharField(max_length=256, verbose_name='流ID')
     timestap = models.CharField(max_length=100, verbose_name="时间戳")
-    time = models.IntegerField(verbose_name="时间", null=True)
+    time = models.FloatField(verbose_name="时间", null=True)
     c_x = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框x")
     c_y = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框y")
     c_w = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框w")
