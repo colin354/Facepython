@@ -4,6 +4,7 @@ from apps.users.serializers import CheckSerializer
 from apps.users.models import Check as CheckModel
 from apps.users.models import FaceImg as FaceImgModel
 from django.conf import settings
+from apps.users.models import Stream as StreamModel
 import ipdb
 
 class Check(APIView):
@@ -23,22 +24,23 @@ class Check(APIView):
         faceid = str(faceid)
         streamid = str(streamid)
         # ipdb.set_trace()
-        #按流查询后端返回数据
-        streamurl = request.GET.get('streamurl')
-        if streamurl:
-            checks = CheckModel.objects.filter(url = streamurl)
+        #如果只有streamid,没有faceid
+        if (faceid =='None' or faceid == '') and (streamid != 'None' and streamid != ''):
+            checks = CheckModel.objects.filter(streamid=streamid)
             serializer =getmarkers(checks)
             return JsonResponse(data={'list': serializer, 'count': len(serializer)}, code='999999',
                                 msg='success')
+        #faceid和streamid都没有
         elif (faceid =='None' or faceid == '') and (streamid == 'None' or streamid == ''):
             checks = CheckModel.objects.values('faceid', 'streamid', 'url').distinct()
             return JsonResponse(data={'list': checks, 'count': len(checks)}, code='999999', msg='success')
-        # 获取某一个具体人脸的信息
-        elif ((faceid != 'None' or faceid != '') and (streamid == 'None' or streamid == '')):
+        # 获取某一个具体人脸的信息，只有faceid，没有streamid
+        elif ((faceid != 'None' and faceid != '') and (streamid == 'None' or streamid == '')):
             checks = CheckModel.objects.filter(faceid=faceid).values('faceid','streamid','url').distinct()
             return JsonResponse(data={'list': list(checks), 'count': len(checks)}, code='999999', msg='success')
+        #faceid和streamid都有
         elif ((faceid != 'None' or faceid != '') and (streamid != 'None' or streamid != '')):
-            checks = CheckModel.objects.filter(faceid=faceid, streamid=streamid).values('faceid', 'time', 'imgurl')
+            checks = CheckModel.objects.filter(faceid=faceid, streamid=streamid).values('faceid', 'time')
             checks_list = list(checks)
             for ind, item in enumerate(checks_list):
                 imgs = FaceImgModel.objects.filter(userid_id=item['faceid']).values('id', 'imgurl')
@@ -59,13 +61,13 @@ def getmarkers(data):
         for marker_data in res:
             if marker.time == marker_data['time']:
 
-                newlist = {'id':marker.faceid,'imgurl':marker.imgurl}
+                newlist = {'id':marker.faceid,'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl}
                 marker_data['imgList'].append(newlist)
                 break
         if newlist:
             print('same time')
         else:
-            res.append({'time': marker.time, 'text': marker.c_threshold,'imgList':[{'id':marker.faceid,'imgurl':marker.imgurl}],
+            res.append({'time': marker.time, 'text': marker.c_threshold,'imgList':[{'id':marker.faceid,'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl}],
                             'width':"50%"})
     return res
 check_face = Check.as_view()
