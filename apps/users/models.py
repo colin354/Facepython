@@ -65,7 +65,7 @@ class Face(models.Model):
 class FaceImg(models.Model):
 
     userid = models.ForeignKey('Face', on_delete=models.CASCADE)
-    imgurl = models.URLField(verbose_name="照片地址")
+    imgurl = models.URLField(verbose_name="照片地址", null=True)
 
     class Meta:
         verbose_name = "人脸图片地址"
@@ -78,7 +78,7 @@ class Check(models.Model):
     faceid = models.CharField(max_length=10, verbose_name='人脸ID')
     streamid = models.CharField(max_length=256, verbose_name='流ID')
     timestap = models.CharField(max_length=100, verbose_name="时间戳")
-    time = models.IntegerField(verbose_name="时间")
+    time = models.IntegerField(verbose_name="时间", null=True)
     c_x = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框x")
     c_y = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框y")
     c_w = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框w")
@@ -87,8 +87,8 @@ class Check(models.Model):
     c_gender = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测性别")
     c_age = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测年龄")
     c_threshold = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测阈值")
-    url = models.CharField(max_length=100, verbose_name="流url")
-    imgurl = models.CharField(max_length=100, verbose_name="图片url")
+    url = models.CharField(max_length=100, null=True, verbose_name="流url")
+    imgurl = models.CharField(max_length=100, null=True, verbose_name="图片url")
 
     class Meta:
         verbose_name = "匹配信息"
