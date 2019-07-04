@@ -104,9 +104,7 @@ class FaceView(APIView):
         limit = request.GET.get('limit')
         page = request.GET.get('page')
         username = request.GET.get('username')
-        print(limit)
-        print(page)
-        print(username)
+        #如果在url里带上了faceid
         if request.path_info.strip('/').split('/')[-1].isdigit() == True:
             # 获取某一个具体人脸的信息
             face_id = int(request.path_info.split('/')[-1])
@@ -118,6 +116,7 @@ class FaceView(APIView):
             data['imgurls'] = self.dealImgUrls(
                 list(FaceImgModel.objects.filter(userid__exact=serializer.data['id']).values_list('imgurl')))
             return JsonResponse(data=data, code='999999', msg='success')
+        #如果在pararms里只带上limit和page
         elif (limit != None and page !=None) and (username == None or username == ''):
             #分页显示信息
             a = int(limit)
@@ -136,6 +135,7 @@ class FaceView(APIView):
                 # serializer.data[i]['imgurls'] = FaceImgModel.objects.filter(userid__exact=serializer.data[i]['id']).values('imgurl')
             return JsonResponse(data={'list': serializer.data, 'count': len(facesall)}, code='999999',
                                 msg='success')
+        #如果在pararms里带上了limit、page和username
         elif (limit != None and page !=None) and (username != None and username != ''):
             faces = Face.objects.filter(username = username)
             serializer = FaceSerializer(faces, many=True)

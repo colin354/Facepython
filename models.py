@@ -8,6 +8,7 @@ from rest_framework.authtoken.models import Token
 
 from django.contrib import admin
 
+
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
@@ -64,7 +65,7 @@ class Face(models.Model):
 class FaceImg(models.Model):
 
     userid = models.ForeignKey('Face', on_delete=models.CASCADE)
-    imgurl = models.URLField(verbose_name="照片地址")
+    imgurl = models.URLField(verbose_name="照片地址", null=True)
 
     class Meta:
         verbose_name = "人脸图片地址"
@@ -74,9 +75,10 @@ class Check(models.Model):
 
     # faceid = models.ForeignKey('Face', on_delete=models.CASCADE)
     # streamid = models.ForeignKey('Stream', on_delete=models.CASCADE)
-    faceid = models.CharField(max_length=100, verbose_name="人脸id")
-    streamid = models.CharField(max_length=100, verbose_name="流地址id")
+    faceid = models.CharField(max_length=10, verbose_name='人脸ID')
+    streamid = models.CharField(max_length=256, verbose_name='流ID')
     timestap = models.CharField(max_length=100, verbose_name="时间戳")
+    time = models.FloatField(verbose_name="时间", null=True)
     c_x = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框x")
     c_y = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框y")
     c_w = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框w")
@@ -85,9 +87,8 @@ class Check(models.Model):
     c_gender = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测性别")
     c_age = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测年龄")
     c_threshold = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测阈值")
-    time = models.IntegerField(verbose_name="时间" , null=True)
-    url = models.CharField(max_length=100, verbose_name="流url")
-    imgurl = models.CharField(max_length=100, verbose_name="图片url")
+    url = models.CharField(max_length=100, null=True, verbose_name="流url")
+    imgurl = models.CharField(max_length=100, null=True, verbose_name="图片url")
 
     class Meta:
         verbose_name = "匹配信息"
@@ -103,13 +104,6 @@ class Stream(models.Model):
         (1, 'update'),
         (2, 'delete'),
     )
-    UNHANDLE, INHANDLE, HANDLEOK, HANDLEFALSE = 0, 1, 2, 3
-    STATUS_CHOICE = (
-        (0, 'unhandle'),
-        (1, 'inhandle'),
-        (2, 'handleok'),
-        (3, 'handlefalse'),
-    )
     streamname     = models.CharField(max_length=50, verbose_name="流名称", unique = True)
     streamlocation = models.CharField(max_length=100, verbose_name="流位置")
     streamurl      = models.CharField(max_length=100, verbose_name="流url")
@@ -117,9 +111,6 @@ class Stream(models.Model):
     streamlon      = models.CharField(max_length = 24 , verbose_name= "经度",blank=True)
     flag = models.IntegerField(choices=FLAG_CHOICE, default=0)
     createDate     = models.DateTimeField(auto_now_add=True)
-    streamtime = models.CharField(max_length=24 ,verbose_name="时长", blank=True)
-    streamfps = models.CharField(max_length=24 ,verbose_name="帧率", blank=True)
-    streamstatus = models.IntegerField(choices=STATUS_CHOICE,default=0, verbose_name="检测状态")
 
     class Meta:
         verbose_name        = "流信息"

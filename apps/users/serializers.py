@@ -55,4 +55,4 @@ class StreamSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Stream
-        fields = ('id','streamname','streamlocation','streamurl','streamlat','streamlon','createDate')
+        fields = ('id','streamname','streamlocation','streamurl','streamlat','streamlon','createDate','streamtime','streamfps','streamstatus')
