@@ -111,6 +111,9 @@ class Stream(models.Model):
     streamlon      = models.CharField(max_length = 24 , verbose_name= "经度",blank=True)
     flag = models.IntegerField(choices=FLAG_CHOICE, default=0)
     createDate     = models.DateTimeField(auto_now_add=True)
+    streamtime = models.CharField(max_length=256, null=True, blank=True, verbose_name="流time")
+    streamfps = models.CharField(max_length=256, null=True, blank=True, verbose_name="流fps")
+    streamstatus = models.CharField(max_length=256, null=True, blank=True, verbose_name="流status")
 
     class Meta:
         verbose_name        = "流信息"

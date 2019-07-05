@@ -5,6 +5,7 @@ from apps.users.models import Check as CheckModel
 from apps.users.models import FaceImg as FaceImgModel
 from django.conf import settings
 from apps.users.models import Stream as StreamModel
+from apps.users.models import Face as FaceModel
 import ipdb
 
 class Check(APIView):
@@ -28,17 +29,41 @@ class Check(APIView):
         #如果只有streamid,没有faceid
         if (faceid =='None' or faceid == '') and (streamid != 'None' and streamid != ''):
             checks = CheckModel.objects.filter(streamid=streamid)
+            checkids = checks.values('faceid').distinct()
+            name = StreamModel.objects.get(pk=int(streamid)).streamname
+            ret = []
+            for face in checkids:
+                newlist = {}
+                newlist['facename'] = FaceModel.objects.get(pk=int(face["faceid"])).username
+                newlist['facecount'] = len(checks.filter(faceid=face['faceid']))
+                ret.append(newlist)
+            newlist = {}
+            newlist['streamname'] = name
+            newlist['facematch'] = ret
             serializer =getmarkers(checks)
-            return JsonResponse(data={'list': serializer, 'count': len(serializer)}, code='999999',
-                                msg='success')
+            return JsonResponse(data={'list': serializer, 'count': len(serializer) , 'info':newlist}, code='999999',
+                msg='success')
         #faceid和streamid都没有
         elif (faceid =='None' or faceid == '') and (streamid == 'None' or streamid == ''):
             checks = CheckModel.objects.values('faceid', 'streamid', 'url').distinct()
-            return JsonResponse(data={'list': checks, 'count': len(checks)}, code='999999', msg='success')
+            checks = list(checks)
+            imgs = []
+            faceids = set()
+            for ind, item in enumerate(checks):
+                faceid = item['faceid']
+                if faceid in faceids:
+                    continue
+                faceids.add(faceid)
+                img = FaceImgModel.objects.filter(userid_id=faceid).values('userid_id', 'imgurl')
+                if len(img) > 0:
+                    username = FaceModel.objects.get(pk=faceid).username
+                    img[0]['username'] = username
+                    imgs.append(img[0])
+            return JsonResponse(data={'list': checks, 'count': len(checks), 'imgList':imgs}, code='999999', msg='success')
         # 获取某一个具体人脸的信息，只有faceid，没有streamid
         elif ((faceid != 'None' and faceid != '') and (streamid == 'None' or streamid == '')):
             checks = CheckModel.objects.filter(faceid=faceid).values('faceid','streamid','url').distinct()
-            imgs = FaceImgModel.objects.filter(userid_id=faceid).values('id', 'imgurl')
+            imgs = FaceImgModel.objects.filter(userid_id=faceid).values('userid_id', 'imgurl')
             imgs = list(imgs)
             return JsonResponse(data={'list': list(checks), 'count': len(checks), 'imgList':imgs}, code='999999', msg='success')
         #faceid和streamid都有
@@ -46,7 +71,7 @@ class Check(APIView):
             checks = CheckModel.objects.filter(faceid=faceid, streamid=streamid).values('faceid', 'time', 'imgurl')
             checks_list = list(checks)
             for ind, item in enumerate(checks_list):
-                imgs = FaceImgModel.objects.filter(userid_id=item['faceid']).values('id', 'imgurl')
+                imgs = FaceImgModel.objects.filter(userid_id=item['faceid']).values('userid_id', 'imgurl')
                 imgs = list(imgs)
                 imgs.clear()
                 imgs.append({'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+item['imgurl']})
