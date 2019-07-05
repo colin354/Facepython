@@ -3,6 +3,7 @@ from users.common.api_response import JsonResponse
 from apps.users.serializers import CheckSerializer
 from apps.users.models import Check as CheckModel
 from apps.users.models import FaceImg as FaceImgModel
+from apps.users.models import Face as FaceModel
 from apps.users.models import Stream as StreamModel
 import ipdb
 
@@ -27,8 +28,19 @@ class Check(APIView):
         #如果只有streamid,没有faceid
         if (faceid =='None' or faceid == '') and (streamid != 'None' and streamid != ''):
             checks = CheckModel.objects.filter(streamid=streamid)
+            checkids = checks.values('faceid').distinct()
+            name = StreamModel.objects.get(pk=int(streamid)).streamname
+            ret = []
+            for face in checkids:
+                newlist = {}
+                newlist['facename'] = FaceModel.objects.get(pk=int(face["faceid"])).username
+                newlist['facecount'] = len(checks.filter(faceid=face['faceid']))
+                ret.append(newlist)
+            newlist = {}
+            newlist['streamname'] = name
+            newlist['facematch'] = ret
             serializer =getmarkers(checks)
-            return JsonResponse(data={'list': serializer, 'count': len(serializer)}, code='999999',
+            return JsonResponse(data={'list': serializer, 'count': len(serializer) , 'info':newlist}, code='999999',
                                 msg='success')
         #faceid和streamid都没有
         elif (faceid =='None' or faceid == '') and (streamid == 'None' or streamid == ''):
