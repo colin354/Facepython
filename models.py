@@ -8,6 +8,7 @@ from rest_framework.authtoken.models import Token
 
 from django.contrib import admin
 
+
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
@@ -103,13 +104,6 @@ class Stream(models.Model):
         (1, 'update'),
         (2, 'delete'),
     )
-    UNHANDLE, INHANDLE, HANDLEOK, HANDLEFALSE = 0, 1, 2, 3
-    STATUS_CHOICE = (
-        (0, 'unhandle'),
-        (1, 'inhandle'),
-        (2, 'handleok'),
-        (3, 'handlefalse'),
-    )
     streamname     = models.CharField(max_length=50, verbose_name="流名称", unique = True)
     streamlocation = models.CharField(max_length=100, verbose_name="流位置")
     streamurl      = models.CharField(max_length=100, verbose_name="流url")
@@ -117,9 +111,6 @@ class Stream(models.Model):
     streamlon      = models.CharField(max_length = 24 , verbose_name= "经度",blank=True)
     flag = models.IntegerField(choices=FLAG_CHOICE, default=0)
     createDate     = models.DateTimeField(auto_now_add=True)
-    streamtime = models.CharField(max_length=256, null=True, blank=True, verbose_name="流time")
-    streamfps = models.CharField(max_length=256, null=True, blank=True, verbose_name="流fps")
-    streamstatus = models.CharField(max_length=256, null=True, blank=True, verbose_name="流status")
 
     class Meta:
         verbose_name        = "流信息"

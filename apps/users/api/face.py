@@ -99,27 +99,53 @@ class FaceView(APIView):
 
     @TokenVerify
     def get(self, request, *args, **kwargs):
-        # 获取所有人脸的信息
-        if request.path_info.strip('/').split('/')[-1].isdigit() == False:
-            faces = Face.objects.all()
-            #print(faces)
-            serializer = FaceSerializer(faces, many=True)
-            for i in range(len(serializer.data)):
-                imgurlRoot = settings.FACE_IMG_ROOT_URL + str(serializer.data[i]['id'])
-                serializer.data[i]['imgdir'] = imgurlRoot
-                serializer.data[i]['imgurls'] = self.dealImgUrls(list(FaceImgModel.objects.filter(userid__exact=serializer.data[i]['id']).values_list('imgurl')))
-            return JsonResponse(data={'list': serializer.data, 'count': len(serializer.data)}, code='999999', msg='success')
-        # 获取某一个具体人脸的信息
-        else:
-            # 注意rest返回的serializer.data 是固定的，不会修改， 所以copy一下
+        limit = request.GET.get('limit')
+        page = request.GET.get('page')
+        username = request.GET.get('username')
+        #如果在url里带上了faceid
+        if request.path_info.strip('/').split('/')[-1].isdigit() == True:
+            # 获取某一个具体人脸的信息
             face_id = int(request.path_info.split('/')[-1])
             face = Face.objects.get(id=face_id)
             serializer = FaceSerializer(face)
             data = serializer.data
             imgurlRoot = settings.FACE_IMG_ROOT_URL + str(serializer.data['id'])
             data['imgdir'] = imgurlRoot
-            data['imgurls'] = self.dealImgUrls(list(FaceImgModel.objects.filter(userid__exact=serializer.data['id']).values_list('imgurl')))
+            data['imgurls'] = self.dealImgUrls(
+                list(FaceImgModel.objects.filter(userid__exact=serializer.data['id']).values_list('imgurl')))
             return JsonResponse(data=data, code='999999', msg='success')
+        #如果在pararms里只带上limit和page
+        elif (limit != None and page !=None) and (username == None or username == ''):
+            #分页显示信息
+            a = int(limit)
+            b = int(page)
+            start = a * (b - 1)
+            end = a * b
+            facesall = Face.objects.all()
+            faces = facesall[start:end]
+            # print(faces)
+            serializer = FaceSerializer(faces, many=True)
+            for i in range(len(serializer.data)):
+                imgurlRoot = settings.FACE_IMG_ROOT_URL + str(serializer.data[i]['id'])
+                serializer.data[i]['imgdir'] = imgurlRoot
+                serializer.data[i]['imgurls'] = self.dealImgUrls(
+                    list(FaceImgModel.objects.filter(userid__exact=serializer.data[i]['id']).values_list('imgurl')))
+                # serializer.data[i]['imgurls'] = FaceImgModel.objects.filter(userid__exact=serializer.data[i]['id']).values('imgurl')
+            return JsonResponse(data={'list': serializer.data, 'count': len(facesall)}, code='999999',
+                                msg='success')
+        #如果在pararms里带上了limit、page和username
+        elif (limit != None and page !=None) and (username != None and username != ''):
+            faces = Face.objects.filter(username = username)
+            serializer = FaceSerializer(faces, many=True)
+            for i in range(len(serializer.data)):
+                imgurlRoot = settings.FACE_IMG_ROOT_URL + str(serializer.data[i]['id'])
+                serializer.data[i]['imgdir'] = imgurlRoot
+                serializer.data[i]['imgurls'] = self.dealImgUrls(
+                    list(FaceImgModel.objects.filter(userid__exact=serializer.data[i]['id']).values_list('imgurl')))
+            return JsonResponse(data={'list': serializer.data, 'count': len(serializer.data)}, code='999999',
+                                msg='success')
+        else:
+            return JsonResponse(data={}, code='999999',msg='success')
 
     def dealImgUrls(self, imgUrls):
         res = []

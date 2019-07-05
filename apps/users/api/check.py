@@ -42,7 +42,7 @@ class Check(APIView):
             newlist['facematch'] = ret
             serializer =getmarkers(checks)
             return JsonResponse(data={'list': serializer, 'count': len(serializer) , 'info':newlist}, code='999999',
-                msg='success')
+                                msg='success')
         #faceid和streamid都没有
         elif (faceid =='None' or faceid == '') and (streamid == 'None' or streamid == ''):
             checks = CheckModel.objects.values('faceid', 'streamid', 'url').distinct()

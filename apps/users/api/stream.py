@@ -5,7 +5,7 @@ from apps.users.models import Stream
 from apps.users.serializers import StreamSerializer
 from rest_framework import serializers
 from apps.users.utility import TokenVerify
-
+import cv2
 
 class StreamAddorupload(APIView):
     TOKEN = 'token'
@@ -13,11 +13,23 @@ class StreamAddorupload(APIView):
     # 调用Token验证
     @TokenVerify
     def post(self, request, *args, **kwargs):
-        serializer = StreamSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return JsonResponse(data={}, code="999999", msg="成功")
-        return JsonResponse(data=serializer.errors, code="-1", msg="失败")
+        print(request.data)
+        cap = cv2.VideoCapture(request.data['streamurl'])
+        if cap.isOpened():  # 当成功打开视频时cap.isOpened()返回True,否则返回False
+            rate = cap.get(5)  # 帧速率
+            frame_number = cap.get(7)  # 视频文件的帧数
+            seconds = frame_number / rate
+            rate = ("%.1f" % rate)
+            seconds = ("%.1f" % seconds)
+            request.data['streamfps'] = str(rate)
+            request.data['streamtime'] = str(seconds)
+            serializer = StreamSerializer(data=request.data)
+            if serializer.is_valid():
+                print('11111111111111111111111111')
+                serializer.save()
+                return JsonResponse(data={}, code="999999", msg="成功")
+            return JsonResponse(data=serializer.errors, code="-1", msg="失败")
+        return JsonResponse(data={}, code="-1", msg="无效的streamurl")
 
 #修改功能
     # 调用Token验证
@@ -25,6 +37,20 @@ class StreamAddorupload(APIView):
     def put(self, request, *args, **kwargs):
         request.data['flag'] = Stream.UPDATE
         stream = Stream.objects.get(id=request.data['id'])
+        print(request.data['streamurl'])
+        print(stream.streamurl)
+        if(request.data['streamurl'] != stream.streamurl):
+            cap = cv2.VideoCapture(request.data['streamurl'])
+            if cap.isOpened():  # 当成功打开视频时cap.isOpened()返回True,否则返回False
+                rate = cap.get(5)  # 帧速率
+                frame_number = cap.get(7)  # 视频文件的帧数
+                seconds = frame_number / rate
+                rate =("%.1f"%rate)
+                seconds = ("%.1f" % seconds)
+                request.data['streamfps'] = str(rate)
+                request.data['streamtime'] = str(seconds)
+            else:
+                return JsonResponse(data={}, code="-1", msg="无效的streamurl")
         serializer = StreamSerializer(stream, data=request.data)
         if serializer.is_valid():
             serializer.save()
