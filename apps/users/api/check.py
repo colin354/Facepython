@@ -34,8 +34,11 @@ class Check(APIView):
             ret = []
             for face in checkids:
                 newlist = {}
-                newlist['facename'] = FaceModel.objects.get(pk=int(face["faceid"])).username
+                face_id = int(face["faceid"])
+                newlist['facename'] = FaceModel.objects.get(pk=face_id).username
+                newlist['faceurl']  = FaceImgModel.objects.filter(userid = face_id).values('imgurl')[0]['imgurl']
                 newlist['facecount'] = len(checks.filter(faceid=face['faceid']))
+                newlist['facetime'] =  getfacemarkers(checks , face_id)
                 ret.append(newlist)
             newlist = {}
             newlist['streamname'] = name
@@ -98,4 +101,17 @@ def getmarkers(data):
             res.append({'time': marker.time, 'text': marker.c_threshold,'imgList':[{'id':marker.faceid,'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl}],
                             'width':"50%"})
     return res
+
+def getfacemarkers(data,fid):
+    print("getfacemarkers")
+    print(data)
+    print(fid)
+    back = []
+    facechecks = data.filter(faceid = fid)
+    for marker in facechecks:
+        newlist={}
+        newlist['time'] = marker.time
+        newlist['imgur'] = marker.imgurl
+        back.append(newlist)
+    return back
 check_face = Check.as_view()
