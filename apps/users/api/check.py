@@ -31,6 +31,7 @@ class Check(APIView):
             checks = CheckModel.objects.filter(streamid=streamid)
             checkids = checks.values('faceid').distinct()
             name = StreamModel.objects.get(pk=int(streamid)).streamname
+            streamtime = float(StreamModel.objects.get(pk=int(streamid)).streamtime)
             ret = []
             for face in checkids:
                 newlist = {}
@@ -42,6 +43,7 @@ class Check(APIView):
                 ret.append(newlist)
             newlist = {}
             newlist['streamname'] = name
+            newlist['streamtime'] = streamtime
             newlist['facematch'] = ret
             serializer =getmarkers(checks)
             return JsonResponse(data={'list': serializer, 'count': len(serializer) , 'info':newlist}, code='999999',
