@@ -31,14 +31,19 @@ class Check(APIView):
             checks = CheckModel.objects.filter(streamid=streamid)
             checkids = checks.values('faceid').distinct()
             name = StreamModel.objects.get(pk=int(streamid)).streamname
+            streamtime = float(StreamModel.objects.get(pk=int(streamid)).streamtime)
             ret = []
             for face in checkids:
                 newlist = {}
+                face_id = int(face["faceid"])
                 newlist['facename'] = FaceModel.objects.get(pk=int(face["faceid"])).username
                 newlist['facecount'] = len(checks.filter(faceid=face['faceid']))
+                newlist['faceurl']  = FaceImgModel.objects.filter(userid = int(face["faceid"])).values('imgurl')[0]['imgurl']                
+                newlist['facetime'] =  getfacemarkers(checks , face_id)
                 ret.append(newlist)
             newlist = {}
             newlist['streamname'] = name
+            newlist['streamtime'] = streamtime
             newlist['facematch'] = ret
             serializer =getmarkers(checks)
             return JsonResponse(data={'list': serializer, 'count': len(serializer) , 'info':newlist}, code='999999',
@@ -98,4 +103,14 @@ def getmarkers(data):
             res.append({'time': marker.time, 'text': marker.c_threshold,'imgList':[{'id':marker.faceid,'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl}],
                             'width':"50%"})
     return res
+
+def getfacemarkers(data,fid):
+    back = []
+    facechecks = data.filter(faceid = fid)
+    for marker in facechecks:
+        newlist={}
+        newlist['time'] = marker.time
+        newlist['imgur'] = settings.FACE_IMG_CHECK_ROOT_URL+ marker.imgurl
+        back.append(newlist)
+    return back
 check_face = Check.as_view()
