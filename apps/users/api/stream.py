@@ -84,8 +84,6 @@ class StreamView(APIView):
             streamsall = Stream.objects.all()
             streams = streamsall[start:end]
             serializer = StreamSerializer(streams, many=True)
-            #return JsonResponse(data={'list': serializer.data, 'count': len(serializer.data)}, code='999999',
-                                    #    msg='success')
             return JsonResponse(data={'list': serializer.data, 'count': len(streamsall)}, code='999999',
                     msg='success')
         else:
