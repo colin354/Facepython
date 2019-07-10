@@ -43,8 +43,9 @@ class Check(APIView):
                 newlist['facecount'] = len(checks.filter(faceid=face['faceid']))
                 newlist1 = getfacemarkers(checks , face_id)
                 print('111111111111111111111111111')
-                newlist['facetime'] =  newlist1['facetime']
+                #newlist['facetime'] =  newlist1['facetime']
                 newlist['marks']  = newlist1['marks']
+                newlist['url'] = newlist1['url']
                 ret.append(newlist)
             newlist = {}
             newlist['streamname'] = name
@@ -113,6 +114,7 @@ def getfacemarkers(data,fid):
     back = []
     facechecks = data.filter(faceid = fid)
     mark = {}
+    url = {}
     reback = {}
     for marker in facechecks:
         newlist={}
@@ -121,8 +123,10 @@ def getfacemarkers(data,fid):
         time=marker.time
         time = [str(time),int(time)][int(time)==time]
         mark[time] =""
+        url[time] = marker.imgurl
         back.append(newlist)
     reback['facetime'] = back
     reback['marks'] = mark
+    reback['url'] = url
     return reback
 check_face = Check.as_view()
