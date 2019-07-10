@@ -35,17 +35,22 @@ class Check(APIView):
             ret = []
             for face in checkids:
                 newlist = {}
+                newlist1 = {}
                 face_id = int(face["faceid"])
                 newlist['facename'] = FaceModel.objects.get(pk=face_id).username
                 newlist['faceurl']  = FaceImgModel.objects.filter(userid = face_id).values('imgurl')[0]['imgurl']
                 newlist['facecount'] = len(checks.filter(faceid=face['faceid']))
-                newlist['facetime'] =  getfacemarkers(checks , face_id)
+                newlist1 = getfacemarkers(checks , face_id)
+                print('111111111111111111111111111')
+                newlist['facetime'] =  newlist1['facetime']
+                newlist['mark']  = newlist1['mark']
                 ret.append(newlist)
             newlist = {}
             newlist['streamname'] = name
             newlist['streamtime'] = streamtime
             newlist['facematch'] = ret
             serializer =getmarkers(checks)
+            print(newlist)
             return JsonResponse(data={'list': serializer, 'count': len(serializer) , 'info':newlist}, code='999999',
                                 msg='success')
         #faceid和streamid都没有
@@ -110,10 +115,16 @@ def getfacemarkers(data,fid):
     print(fid)
     back = []
     facechecks = data.filter(faceid = fid)
+    mark = {}
+    reback = {}
     for marker in facechecks:
         newlist={}
         newlist['time'] = marker.time
         newlist['imgur'] = marker.imgurl
+        mark[marker.time] = FaceModel.objects.get(pk=marker.faceid).username
         back.append(newlist)
-    return back
+    reback['facetime'] = back
+    reback['mark'] = mark
+    print(reback)
+    return reback
 check_face = Check.as_view()
