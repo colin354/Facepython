@@ -7,6 +7,7 @@ from django.conf import settings
 from apps.users.models import Stream as StreamModel
 from apps.users.models import Face as FaceModel
 import ipdb
+from collections import OrderedDict
 
 class Check(APIView):
 
@@ -43,14 +44,13 @@ class Check(APIView):
                 newlist1 = getfacemarkers(checks , face_id)
                 print('111111111111111111111111111')
                 newlist['facetime'] =  newlist1['facetime']
-                newlist['mark']  = newlist1['mark']
+                newlist['marks']  = newlist1['marks']
                 ret.append(newlist)
             newlist = {}
             newlist['streamname'] = name
             newlist['streamtime'] = streamtime
             newlist['facematch'] = ret
             serializer =getmarkers(checks)
-            print(newlist)
             return JsonResponse(data={'list': serializer, 'count': len(serializer) , 'info':newlist}, code='999999',
                                 msg='success')
         #faceid和streamid都没有
@@ -120,11 +120,12 @@ def getfacemarkers(data,fid):
     for marker in facechecks:
         newlist={}
         newlist['time'] = marker.time
-        newlist['imgur'] = marker.imgurl
-        mark[marker.time] = FaceModel.objects.get(pk=marker.faceid).username
+        newlist['imgurl'] = marker.imgurl
+        time=marker.time
+        time = [str(time),int(time)][int(time)==time]
+        mark[time] =""
         back.append(newlist)
     reback['facetime'] = back
-    reback['mark'] = mark
-    print(reback)
+    reback['marks'] = mark
     return reback
 check_face = Check.as_view()
