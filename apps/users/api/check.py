@@ -117,7 +117,7 @@ def getfacemarkers(data,fid):
     for marker in facechecks:
         newlist={}
         newlist['time'] = marker.time
-        newlist['imgurl'] = marker.imgurl
+        newlist['imgurl'] = settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl
         time=marker.time
         time = [str(time),int(time)][int(time)==time]
         mark[time] =""
