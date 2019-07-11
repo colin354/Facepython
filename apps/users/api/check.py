@@ -123,7 +123,7 @@ def getfacemarkers(data,fid):
         time=marker.time
         time = [str(time),int(time)][int(time)==time]
         mark[time] =""
-        url[time] = marker.imgurl
+        url[time] = settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl
         back.append(newlist)
     reback['facetime'] = back
     reback['marks'] = mark
