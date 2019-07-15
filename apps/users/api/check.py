@@ -6,12 +6,18 @@ from apps.users.models import FaceImg as FaceImgModel
 from django.conf import settings
 from apps.users.models import Stream as StreamModel
 from apps.users.models import Face as FaceModel
-import ipdb
 from collections import OrderedDict
 
 class Check(APIView):
 
     def post(self, request, *args, **kwargs):
+        print("check post test")
+        print(request.data)
+        tempUrl = request.data.get('url')
+        streamid = StreamModel.objects.filter(streamurl=settings.FACE_IMG_CHECK_ROOT_URL+tempUrl).values("id")[0]
+        print(streamid)
+        request.data['streamid'] = streamid['id'] 
+        print(request.data)
         serializer = CheckSerializer(data=request.data)
         if serializer.is_valid():
             #这里可以解析post上传数据，再存储，目前做个简单的
@@ -26,7 +32,6 @@ class Check(APIView):
         streamid = request.GET.get('streamid')
         faceid = str(faceid)
         streamid = str(streamid)
-        # ipdb.set_trace()
         #如果只有streamid,没有faceid
         if (faceid =='None' or faceid == '') and (streamid != 'None' and streamid != ''):
             checks = CheckModel.objects.filter(streamid=streamid)
