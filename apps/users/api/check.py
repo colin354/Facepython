@@ -66,14 +66,23 @@ class Check(APIView):
             imgs = []
             faceids = set()
             for ind, item in enumerate(checks):
+                rets = []
                 faceid = item['faceid']
                 if faceid in faceids:
                     continue
                 faceids.add(faceid)
                 img = FaceImgModel.objects.filter(userid_id=faceid).values('userid_id', 'imgurl')
+                locs = CheckModel.objects.filter(faceid=faceid).values('streamid').distinct()
+                for loc in locs:
+                    ret2 = []
+                    ret1 =StreamModel.objects.get(pk=loc['streamid'])
+                    ret2.append(ret1.streamlon)
+                    ret2.append(ret1.streamlat)
+                    rets.append(ret2)
                 if len(img) > 0:
                     username = FaceModel.objects.get(pk=faceid).username
                     img[0]['username'] = username
+                    img[0]['locations'] = rets
                     imgs.append(img[0])
             return JsonResponse(data={'list': checks, 'count': len(checks), 'imgList':imgs}, code='999999', msg='success')
         # 获取某一个具体人脸的信息，只有faceid，没有streamid
