@@ -9,6 +9,7 @@ from apps.users.serializers import FaceSerializer
 from rest_framework.parsers import JSONParser
 from apps.users.utility import TokenVerify
 from apps.users.models import FaceImg as FaceImgModel
+from apps.users.models import Face as FaceModel
 import os, shutil
 import pdb
 
@@ -125,13 +126,24 @@ class FaceView(APIView):
             faces = facesall[start:end]
             # print(faces)
             serializer = FaceSerializer(faces, many=True)
+            imgs = []
+            faceids = set()
             for i in range(len(serializer.data)):
                 imgurlRoot = settings.FACE_IMG_ROOT_URL + str(serializer.data[i]['id'])
+                faceid = str(serializer.data[i]['id'])
                 serializer.data[i]['imgdir'] = imgurlRoot
                 serializer.data[i]['imgurls'] = self.dealImgUrls(
                     list(FaceImgModel.objects.filter(userid__exact=serializer.data[i]['id']).values_list('imgurl')))
+                if faceid in faceids:
+                    continue
+                faceids.add(faceid)
+                img = FaceImgModel.objects.filter(userid_id=faceid).values('userid_id', 'imgurl')
+                if len(img) > 0:
+                    username = FaceModel.objects.get(pk=faceid).username
+                    img[0]['username'] = username
+                    imgs.append(img[0])
                 # serializer.data[i]['imgurls'] = FaceImgModel.objects.filter(userid__exact=serializer.data[i]['id']).values('imgurl')
-            return JsonResponse(data={'list': serializer.data, 'count': len(facesall)}, code='999999',
+            return JsonResponse(data={'list': serializer.data, 'imgList':imgs, 'count': len(facesall)}, code='999999',
                                 msg='success')
         #如果在pararms里带上了limit、page和username
         elif (limit != None and page !=None) and (username != None and username != ''):
@@ -205,4 +217,3 @@ class FaceView(APIView):
 
 face_img = FaceImg.as_view()
 faces = FaceView.as_view()
-

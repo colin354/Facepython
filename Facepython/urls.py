@@ -32,9 +32,11 @@ urlpatterns = [
     url(r'^api/face',face.faces),
     url(r'^img',face.face_img),
     url(r'^api/check', check.check_face),
+    url(r'^sys/check/location', check.check_location),
     url(r'^captcha',include('captcha.urls')),
     url(r'^captcha/code',user.verification_code),
     # url(r'api/user/login', user.obtain_auth_token),
     url(r'^sys/stream/page',stream.stream_list), #获取数据库信息URL
     url(r'^sys/stream',stream.stream_add),
+    #url(r'^api/check/location', check.check_location),
     url(r'^$', TemplateView.as_view(template_name="index.html"))] + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
