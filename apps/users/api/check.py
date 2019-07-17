@@ -72,17 +72,17 @@ class Check(APIView):
                     continue
                 faceids.add(faceid)
                 img = FaceImgModel.objects.filter(userid_id=faceid).values('userid_id', 'imgurl')
-                locs = CheckModel.objects.filter(faceid=faceid).values('streamid').distinct()
-                for loc in locs:
-                    ret2 = []
-                    ret1 =StreamModel.objects.get(pk=loc['streamid'])
-                    ret2.append(ret1.streamlon)
-                    ret2.append(ret1.streamlat)
-                    rets.append(ret2)
+                # locs = CheckModel.objects.filter(faceid=faceid).values('streamid').distinct()
+                # for loc in locs:
+                #     ret2 = []
+                #     ret1 =StreamModel.objects.get(pk=loc['streamid'])
+                #     ret2.append(ret1.streamlon)
+                #     ret2.append(ret1.streamlat)
+                #     rets.append(ret2)
                 if len(img) > 0:
                     username = FaceModel.objects.get(pk=faceid).username
                     img[0]['username'] = username
-                    img[0]['locations'] = rets
+                    #img[0]['locations'] = rets
                     imgs.append(img[0])
             return JsonResponse(data={'list': checks, 'count': len(checks), 'imgList':imgs}, code='999999', msg='success')
         # 获取某一个具体人脸的信息，只有faceid，没有streamid
@@ -104,6 +104,30 @@ class Check(APIView):
             return JsonResponse(data={'list': list(checks_list), 'count': len(checks_list)}, code='999999', msg='success')
         else:
             return JsonResponse(data={}, code="999999", msg="成功")
+
+
+class CheckLocations(APIView):
+    def get(self, request, *args, **kwargs):
+        faceid = request.GET.get('faceid')
+        if(faceid != 'None' and faceid != ''):
+            checks = CheckModel.objects.filter(faceid=faceid).values('streamid').distinct()
+            newlist = {}
+            ret = []
+            i = 0
+            centerlon = 0
+            centerlat = 0
+            for check in checks:
+                ret1 = StreamModel.objects.get(pk=check['streamid'])
+                ret2 = []
+                centerlon += float(ret1.streamlon)
+                centerlat += float(ret1.streamlat)
+                ret2.append(ret1.streamlon)
+                ret2.append(ret1.streamlat)
+                ret.append(ret2)
+                i+= 1
+            newlist['location'] = ret
+            newlist['center'] = [centerlon/i,centerlat/i]
+            return JsonResponse(data=newlist, code="999999", msg="成功")
 
 #按流查询后端数据处理过程
 def getmarkers(data):
@@ -144,4 +168,7 @@ def getfacemarkers(data,fid):
     reback['marks'] = mark
     reback['url'] = url
     return reback
+
+
 check_face = Check.as_view()
+check_location = CheckLocations.as_view()

@@ -217,4 +217,3 @@ class FaceView(APIView):
 
 face_img = FaceImg.as_view()
 faces = FaceView.as_view()
-
