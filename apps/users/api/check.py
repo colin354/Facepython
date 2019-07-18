@@ -93,14 +93,22 @@ class Check(APIView):
             return JsonResponse(data={'list': list(checks), 'count': len(checks), 'imgList':imgs}, code='999999', msg='success')
         #faceid和streamid都有
         elif ((faceid != 'None' and faceid != '') and (streamid != 'None' and streamid != '')):
-            checks = CheckModel.objects.filter(faceid=faceid, streamid=streamid).values('faceid', 'time', 'imgurl')
+            checks = CheckModel.objects.filter(faceid=faceid, streamid=streamid).values('faceid', 'time', 'imgurl','c_threshold')
             checks_list = list(checks)
             for ind, item in enumerate(checks_list):
-                imgs = FaceImgModel.objects.filter(userid_id=item['faceid']).values('userid_id', 'imgurl')
-                imgs = list(imgs)
-                imgs.clear()
-                imgs.append({'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+item['imgurl']})
+                # imgs = FaceImgModel.objects.filter(userid_id=item['faceid']).values('userid_id', 'imgurl')
+                # imgs = list(imgs)
+                # print("~~~~~~~~~~~~~~~~~~~~~~")
+                # print(imgs)
+                # print("~~~~~~~~~~~~~~~~~~~~~~")
+                # imgs.clear()
+                # print("~~~~~~~~~~~~~~~~~~~~~~")
+                # print(imgs)
+                # print("~~~~~~~~~~~~~~~~~~~~~~")
+                imgs = []
+                imgs.append({'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+item['imgurl'] , 'threshold': item['c_threshold']})
                 checks_list[ind]['imgList'] = imgs
+                #item['imgurl'] = settings.FACE_IMG_CHECK_ROOT_URL+item['imgurl']
             return JsonResponse(data={'list': list(checks_list), 'count': len(checks_list)}, code='999999', msg='success')
         else:
             return JsonResponse(data={}, code="999999", msg="成功")
@@ -138,13 +146,13 @@ def getmarkers(data):
         for marker_data in res:
             if marker.time == marker_data['time']:
 
-                newlist = {'id':marker.faceid,'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl}
+                newlist = {'id':marker.faceid,'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl,'threshold':marker.c_threshold}
                 marker_data['imgList'].append(newlist)
                 break
         if newlist:
             print('same time')
         else:
-            res.append({'time': marker.time, 'text': marker.c_threshold,'imgList':[{'id':marker.faceid,'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl}],
+            res.append({'time': marker.time, 'imgList':[{'id':marker.faceid,'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl,'threshold':marker.c_threshold}],
                             'width':"50%"})
     return res
 
@@ -158,6 +166,7 @@ def getfacemarkers(data,fid):
         newlist={}
         newlist['time'] = marker.time
         newlist['imgurl'] = settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl
+        newlist['threshold'] = marker.c_threshold
         time=marker.time
         time = [str(time),int(time)][int(time)==time]
         mark[time] =""
