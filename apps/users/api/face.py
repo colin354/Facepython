@@ -69,21 +69,22 @@ class FaceImg(APIView):
             else:
                 img = request.path_info.strip('/').split('/')[-1]
                 file_addr = settings.MEDIA_ROOT+'temp/'+ UUID + '/'+img
-                os.remove(file_addr)
+                if '/' not in img:
+                    os.remove(file_addr)
                 return JsonResponse(data={}, code='999999', msg="成功")
         # 修改用户时删除头像
         if userid != None:
             print("now 修改删除")
             img = request.path_info.strip('/').split('/')[-1]
-            file_addr_in_temp = settings.MEDIA_ROOT+'temp/'+ UUID + '/'+img
+            #file_addr_in_temp = settings.MEDIA_ROOT+'temp/'+ UUID + '/'+img
             # file_addr_not_in_temp = settings.MEDIA_ROOT+'/'+ userid + '/'+img
             file_addr_not_in_temp = settings.MEDIA_ROOT + '/image/' + userid + '/' + img
             print(userid)
-            print(file_addr_in_temp)
+            # print(file_addr_in_temp)
             print(file_addr_not_in_temp)
-            if os.path.isfile(file_addr_in_temp):
-                print("11111111111111111")
-                os.remove(file_addr_in_temp)
+            # if os.path.isfile(file_addr_in_temp):
+            #     print("11111111111111111")
+            #     os.remove(file_addr_in_temp)
             if os.path.isfile(file_addr_not_in_temp):
                 print("2222222222")
                 # imgurl = settings.FACE_IMG_ROOT_URL + str(userid)+'/'+img
@@ -216,7 +217,8 @@ class FaceView(APIView):
                 if imgFile in os.listdir(des_file_dir):
                     imgurl = settings.FACE_IMG_ROOT_URL + 'image/' + str(serializer.data['id']) + '/' + imgFile
                     FaceImgModel.objects.filter(imgurl__exact=imgurl).delete()
-                    os.remove(des_file_dir+'/'+imgFile)
+                    if '/' not in imgFile:
+                        os.remove(des_file_dir+'/'+imgFile)
             shutil.rmtree(src_file_dir)
         # 移动UUID临时目录下的新上传的文件到具体保存地址
         src_file_dir = settings.MEDIA_ROOT+'temp/'+UUID
@@ -256,9 +258,12 @@ class FaceView(APIView):
 
     @TokenVerify
     def delete(self, request, *args, **kwargs):
-        face = Face.objects.get(id=request.data[0])
-        face.flag = Face.DELETE
-        face.save()
+        ids = request.data
+        for id in ids:
+            face_img = FaceImgModel.objects.filter(userid_id=id).delete()
+            face = Face.objects.get(id=id).delete()
+        #face.flag = Face.DELETE
+        #face.save()
         return JsonResponse(data={}, code='999999', msg='成功')
 
 
