@@ -107,6 +107,7 @@ class StreamView(APIView):
             newlist = []
             lon = 0
             lat = 0
+            ret = []
             for streamlng in streamlngs:
                 newlist.append([streamlng['streamlon'],streamlng['streamlat']])
                 lon = lon+float(streamlng['streamlon'])
@@ -136,15 +137,15 @@ class StreamView(APIView):
             newlist = {}
             newlist['videonum'] = len(streamsall)
             newlist['finishmatch'] = len(Stream.objects.filter(streamstatus='1'))
+            newlist['check_num'] = len(Check.objects.all())
+            newlist['check_percentage'] = 0 if (newlist['videonum']==0) else (int(newlist['finishmatch'] / newlist['videonum'] * 100))
             #serializer = StreamSerializer(streams, many=True)
             #print(serializer)
             return JsonResponse(data={'list': streams, 'count': len(streamsall),'check_info':newlist}, code='999999',
                     msg='success')
         else:
             #通过ID获取单个数据
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!获取特定信息")
             stream_id = int(request.path_info.split('/')[-1])
-            print(stream_id)
             stream = Stream.objects.get(id=stream_id)
             serializer = StreamSerializer(stream)
             return JsonResponse(data=serializer.data, code='999999', msg='success')

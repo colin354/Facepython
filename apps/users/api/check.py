@@ -11,19 +11,14 @@ from collections import OrderedDict
 class Check(APIView):
 
     def post(self, request, *args, **kwargs):
-        print("check post test")
-        print(request.data)
         tempUrl = request.data.get('url')
         streamid = StreamModel.objects.filter(streamurl=settings.FACE_IMG_CHECK_ROOT_URL+tempUrl).values("id")[0]
-        print(streamid)
         request.data['streamid'] = streamid['id'] 
-        print(request.data)
         serializer = CheckSerializer(data=request.data)
         if serializer.is_valid():
             #这里可以解析post上传数据，再存储，目前做个简单的
             serializer.save()
             return JsonResponse(data={}, code="999999", msg="成功")
-        print(serializer.errors)
         return JsonResponse(data=serializer.errors, code="999999", msg="失败")
 
     def get(self, request, *args, **kwargs):
@@ -47,7 +42,6 @@ class Check(APIView):
                 newlist['faceurl']  = FaceImgModel.objects.filter(userid = face_id).values('imgurl')[0]['imgurl']
                 newlist['facecount'] = len(checks.filter(faceid=face['faceid']))
                 newlist1 = getfacemarkers(checks , face_id)
-                print('111111111111111111111111111')
                 newlist['facetime'] =  newlist1['facetime']
                 newlist['marks']  = newlist1['marks']
                 newlist['url'] = newlist1['url']
@@ -96,15 +90,6 @@ class Check(APIView):
             checks = CheckModel.objects.filter(faceid=faceid, streamid=streamid).values('faceid', 'time', 'imgurl','c_threshold')
             checks_list = list(checks)
             for ind, item in enumerate(checks_list):
-                # imgs = FaceImgModel.objects.filter(userid_id=item['faceid']).values('userid_id', 'imgurl')
-                # imgs = list(imgs)
-                # print("~~~~~~~~~~~~~~~~~~~~~~")
-                # print(imgs)
-                # print("~~~~~~~~~~~~~~~~~~~~~~")
-                # imgs.clear()
-                # print("~~~~~~~~~~~~~~~~~~~~~~")
-                # print(imgs)
-                # print("~~~~~~~~~~~~~~~~~~~~~~")
                 imgs = []
                 imgs.append({'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+item['imgurl'] , 'threshold': item['c_threshold']})
                 checks_list[ind]['imgList'] = imgs
@@ -139,7 +124,6 @@ class CheckLocations(APIView):
 
 #按流查询后端数据处理过程
 def getmarkers(data):
-    print('getmarkers!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     res = []
     for marker in data:
         newlist = {}
