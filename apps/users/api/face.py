@@ -10,6 +10,7 @@ from rest_framework.parsers import JSONParser
 from apps.users.utility import TokenVerify
 from apps.users.models import FaceImg as FaceImgModel
 from apps.users.models import Face as FaceModel
+from apps.users.models import Check as CheckModel
 import os, shutil
 import pdb
 
@@ -263,9 +264,10 @@ class FaceView(APIView):
             face_img = FaceImgModel.objects.filter(userid_id=id).delete()
             face = Face.objects.get(id=id).delete()
             src_file_dir = settings.MEDIA_ROOT+'/image/'+str(id)
+            print(src_file_dir)
             if os.path.isdir(src_file_dir) == True:
                 shutil.rmtree(src_file_dir)
-
+            checks = CheckModel.objects.filter(faceid=id).delete()
         #face.flag = Face.DELETE
         #face.save()
         return JsonResponse(data={}, code='999999', msg='成功')
