@@ -12,13 +12,27 @@ from collections import OrderedDict
 class Check(APIView):
 
     def post(self, request, *args, **kwargs):
+        print("check post test")
+        print(request.data)
+        tempUrl = request.data.get('url')
+        streamid = StreamModel.objects.filter(streamurl=settings.FACE_IMG_CHECK_ROOT_URL + tempUrl).values("id")[0]
+        print(streamid)
+        request.data['streamid'] = streamid['id']
+        print(request.data)
         serializer = CheckSerializer(data=request.data)
         if serializer.is_valid():
-            #这里可以解析post上传数据，再存储，目前做个简单的
+            # 这里可以解析post上传数据，再存储，目前做个简单的
             serializer.save()
             return JsonResponse(data={}, code="999999", msg="成功")
         print(serializer.errors)
         return JsonResponse(data=serializer.errors, code="999999", msg="失败")
+        # serializer = CheckSerializer(data=request.data)
+        # if serializer.is_valid():
+        #     #这里可以解析post上传数据，再存储，目前做个简单的
+        #     serializer.save()
+        #     return JsonResponse(data={}, code="999999", msg="成功")
+        # print(serializer.errors)
+        # return JsonResponse(data=serializer.errors, code="999999", msg="失败")
 
     def get(self, request, *args, **kwargs):
         # 获取所有人脸的信息

@@ -5,7 +5,9 @@ from apps.users.models import Stream , Check
 from apps.users.serializers import StreamSerializer
 from rest_framework import serializers
 from apps.users.utility import TokenVerify
+from django.conf import settings
 import cv2
+import os, shutil
 
 class StreamCheck(APIView):
     # TOKEN = 'token'
@@ -69,10 +71,25 @@ class StreamAddorupload(APIView):
     # 调用Token验证
     @TokenVerify
     def delete(self, request, *args, **kwargs):
+        #逻辑删除
+        # for data_id in request.data:
+        #     stream = Stream.objects.get(id=data_id)
+        #     stream.flag = Stream.DELETE
+        #     stream.save()
         for data_id in request.data:
-            stream = Stream.objects.get(id=data_id)
-            stream.flag = Stream.DELETE
-            stream.save()
+            #获取url本地文件全路径
+            streamurl =  Stream.objects.get(id=data_id).streamurl
+            streamurl = '/'+streamurl.strip('/').split('/')[-2]+'/'+streamurl.strip('/').split('/')[-1]
+            src_file_dir = settings.MEDIA_ROOT + streamurl
+            print(src_file_dir)
+            # 删除stream表中的记录
+            streams = Stream.objects.get(id=data_id).delete()
+            # 删除真实的视频文件
+            if os.path.isfile(src_file_dir) == True:
+                os.remove(src_file_dir)
+            #删除check表中对应的记录
+            check = Check.objects.filter(streamid=data_id).delete()
+
         return JsonResponse(data={}, code='999999', msg='成功')
 
 
@@ -145,6 +162,8 @@ class StreamView(APIView):
             newlist = {}
             newlist['videonum'] = len(streamsall)
             newlist['finishmatch'] = len(Stream.objects.filter(streamstatus='1'))
+            newlist['check_num'] = len(Check.objects.all())
+            newlist['check_percentage'] = 0 if (newlist['videonum'] == 0) else (int(newlist['finishmatch'] / newlist['videonum'] * 100))
             #serializer = StreamSerializer(streams, many=True)
             #print(serializer)
             return JsonResponse(data={'list': streams, 'count': len(streamsall),'check_info':newlist}, code='999999',

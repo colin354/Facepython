@@ -261,12 +261,16 @@ class FaceView(APIView):
     def delete(self, request, *args, **kwargs):
         ids = request.data
         for id in ids:
+            #删除faceimg表数据
             face_img = FaceImgModel.objects.filter(userid_id=id).delete()
+            #删除face表中数据
             face = Face.objects.get(id=id).delete()
+            #删除本地图片
             src_file_dir = settings.MEDIA_ROOT+'/image/'+str(id)
             print(src_file_dir)
             if os.path.isdir(src_file_dir) == True:
                 shutil.rmtree(src_file_dir)
+            #删除chec表中对应记录
             checks = CheckModel.objects.filter(faceid=id).delete()
         #face.flag = Face.DELETE
         #face.save()
