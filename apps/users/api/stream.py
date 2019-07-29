@@ -7,13 +7,18 @@ from rest_framework import serializers
 from apps.users.utility import TokenVerify
 import cv2
 
+class StreamCheck(APIView):
+    def post(self, request, *args, **kwargs):
+        streams = Stream.objects.all().update(streamstatus = "1")
+        return JsonResponse(data={}, code="999999", msg="成功")
+
+
 class StreamAddorupload(APIView):
     TOKEN = 'token'
 #新增功能
     # 调用Token验证
     @TokenVerify
     def post(self, request, *args, **kwargs):
-        print(request.data)
         cap = cv2.VideoCapture(request.data['streamurl'])
         if cap.isOpened():  # 当成功打开视频时cap.isOpened()返回True,否则返回False
             rate = cap.get(5)  # 帧速率
@@ -77,7 +82,7 @@ class StreamView(APIView):
         # print("111111111111111111111111111")
         # print(request.GET.get('map_location'))
         # print("222222222222222222222222222")
-        #params里带map_location
+        #params里带map_location摄像头位置预览的GET请求获取所谓视频信息用于做点标记
         if(request.GET.get('map_location') == 'GETLOCATION'):
             streams = Stream.objects.all()
             serializer = StreamSerializer(streams, many=True)
@@ -101,10 +106,11 @@ class StreamView(APIView):
                 newlist.append(ret1)
             return JsonResponse(data={'list': serializer.data, 'count': len(serializer.data) , 'streamList':newlist}, code='999999',
                                     msg='success')
-        # params里带map_location
+        # params里带map_location摄像头位置余力的GET请求用于做树形结构
         if (request.GET.get('map_location') == 'GETMAP'):
             streamlngs = Stream.objects.all().values('streamlon','streamlat')
             newlist = []
+            ret = []
             lon = 0
             lat = 0
             ret = []
@@ -153,3 +159,4 @@ class StreamView(APIView):
 
 stream_list = StreamView.as_view()
 stream_add = StreamAddorupload.as_view()
+stream_check = StreamCheck.as_view()

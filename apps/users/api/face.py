@@ -262,6 +262,10 @@ class FaceView(APIView):
         for id in ids:
             face_img = FaceImgModel.objects.filter(userid_id=id).delete()
             face = Face.objects.get(id=id).delete()
+            src_file_dir = settings.MEDIA_ROOT+'/image/'+str(id)
+            if os.path.isdir(src_file_dir) == True:
+                shutil.rmtree(src_file_dir)
+
         #face.flag = Face.DELETE
         #face.save()
         return JsonResponse(data={}, code='999999', msg='成功')
