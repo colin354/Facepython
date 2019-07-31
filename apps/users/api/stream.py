@@ -100,7 +100,7 @@ class StreamView(APIView):
     @TokenVerify
     def get(self, request, *args, **kwargs):
         # print("111111111111111111111111111")
-        # print(request.GET.get('map_location'))
+        print(request.GET.get('map_location'))
         # print("222222222222222222222222222")
         #params里带map_location摄像头位置预览的GET请求获取所谓视频信息用于做点标记
         if(request.GET.get('map_location') == 'GETLOCATION'):

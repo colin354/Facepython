@@ -81,16 +81,13 @@ class FaceImg(APIView):
             # file_addr_not_in_temp = settings.MEDIA_ROOT+'/'+ userid + '/'+img
             file_addr_not_in_temp = settings.MEDIA_ROOT + '/image/' + userid + '/' + img
             print(userid)
-            # print(file_addr_in_temp)
             print(file_addr_not_in_temp)
             # if os.path.isfile(file_addr_in_temp):
-            #     print("11111111111111111")
             #     os.remove(file_addr_in_temp)
             if os.path.isfile(file_addr_not_in_temp):
                 print("2222222222")
                 # imgurl = settings.FACE_IMG_ROOT_URL + str(userid)+'/'+img
                 # imgurl = settings.FACE_IMG_ROOT_URL + 'image/' + str(userid) + '/' + img
-                # print(imgurl)
                 # FaceImgModel.objects.filter(imgurl__exact=imgurl).delete()
                 # os.remove(file_addr_not_in_temp)
                 # 此处添加修改时删除图片后点取消，可以返回到之前的状态
@@ -108,15 +105,18 @@ class FaceView(APIView):
         print("now post api face")
         serializer = FaceSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
             UUID = request.GET.get("uuid")
             if UUID == None:
                 return JsonResponse(data={}, code="-1", msg="失败 缺少uuid")
             # 重新命名文件夹
             src_file_dir = settings.MEDIA_ROOT+'temp/'+UUID
-            des_file_dir = settings.MEDIA_ROOT+'/image/'+str(serializer.data['id'])
             #des_file_dir = settings.MEDIA_ROOT+'/'+ str(serializer.data['id'])
+            if os.path.isdir(src_file_dir) == False:
+                return JsonResponse(data={}, code="-1", msg="失败 请添加人脸图片")
+            serializer.save()
+            des_file_dir = settings.MEDIA_ROOT + '/image/' + str(serializer.data['id'])
             os.renames(src_file_dir, des_file_dir)
+            print("重新命名文件夹")
             # 获取外键，图片url前缀
             uid = serializer.data['id']
             face = Face.objects.get(pk=uid)
