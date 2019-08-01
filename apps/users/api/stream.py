@@ -21,6 +21,9 @@ class StreamAddorupload(APIView):
     # 调用Token验证
     @TokenVerify
     def post(self, request, *args, **kwargs):
+        serializer = StreamSerializer(data=request.data)
+        if serializer.is_valid()==False:
+            return JsonResponse(data=serializer.errors, code="-1", msg="新增失败 该视频已存在")
         cap = cv2.VideoCapture(request.data['streamurl'])
         if cap.isOpened():  # 当成功打开视频时cap.isOpened()返回True,否则返回False
             rate = cap.get(5)  # 帧速率
@@ -35,7 +38,6 @@ class StreamAddorupload(APIView):
                 print('11111111111111111111111111')
                 serializer.save()
                 return JsonResponse(data={}, code="999999", msg="成功")
-            return JsonResponse(data=serializer.errors, code="-1", msg="失败")
         return JsonResponse(data={}, code="-1", msg="无效的streamurl")
 
 #修改功能
@@ -97,7 +99,7 @@ class StreamView(APIView):
     @TokenVerify
     def get(self, request, *args, **kwargs):
         # print("111111111111111111111111111")
-        # print(request.GET.get('map_location'))
+        print(request.GET.get('map_location'))
         # print("222222222222222222222222222")
         #params里带map_location摄像头位置预览的GET请求获取所谓视频信息用于做点标记
         if(request.GET.get('map_location') == 'GETLOCATION'):

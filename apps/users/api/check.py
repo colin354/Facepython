@@ -36,6 +36,7 @@ class Check(APIView):
         streamid = str(streamid)
         #如果只有streamid,没有faceid
         if (faceid =='None' or faceid == '') and (streamid != 'None' and streamid != ''):
+            print("111111111111111111111")
             checks = CheckModel.objects.filter(streamid=streamid)
             checkids = checks.values('faceid').distinct()
             name = StreamModel.objects.get(pk=int(streamid)).streamname
@@ -45,6 +46,7 @@ class Check(APIView):
                 newlist = {}
                 newlist1 = {}
                 face_id = int(face["faceid"])
+                print(face_id)
                 newlist['facename'] = FaceModel.objects.get(pk=face_id).username
                 newlist['faceurl']  = FaceImgModel.objects.filter(userid = face_id).values('imgurl')[0]['imgurl']
                 newlist['facecount'] = len(checks.filter(faceid=face['faceid']))
@@ -91,6 +93,8 @@ class Check(APIView):
             checks = CheckModel.objects.filter(faceid=faceid).values('faceid','streamid','url').distinct()
             imgs = FaceImgModel.objects.filter(userid_id=faceid).values('userid_id', 'imgurl')
             imgs = list(imgs)
+            if len(checks) == 0:
+                return JsonResponse(data={}, code='-1', msg='无效的faceid')
             return JsonResponse(data={'list': list(checks), 'count': len(checks), 'imgList':imgs}, code='999999', msg='success')
         #faceid和streamid都有
         elif ((faceid != 'None' and faceid != '') and (streamid != 'None' and streamid != '')):
@@ -153,20 +157,32 @@ def getfacemarkers(data,fid):
     mark = {}
     url = {}
     reback = {}
+    i = 0
+    print(len(facechecks))
     for marker in facechecks:
+        i += 1
+        print(i)
+        print(marker.id)
         newlist={}
         newlist['time'] = marker.time
+        print("22222222")
+        print("333333333333")
         newlist['imgurl'] = settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl
+        print("44444444444")
         newlist['threshold'] = marker.c_threshold
         time=marker.time
         time = [str(time),int(time)][int(time)==time]
         mark[time] =""
         url[time] = settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl
+
         back.append(newlist)
+
+
     #给列表back按照列表内字典的time来做升序
     reback['facetime'] = sorted(back, key=lambda back:back['time'], reverse=False)
     reback['marks'] = mark
     reback['url'] = url
+
     return reback
 
 
