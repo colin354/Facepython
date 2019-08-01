@@ -40,7 +40,6 @@ class Check(APIView):
         streamid = request.GET.get('streamid')
         faceid = str(faceid)
         streamid = str(streamid)
-        print(streamid)
         # ipdb.set_trace()
         #如果只有streamid,没有faceid
         if (faceid =='None' or faceid == '') and (streamid != 'None' and streamid != ''):
@@ -102,6 +101,8 @@ class Check(APIView):
             checks = CheckModel.objects.filter(faceid=faceid).values('faceid','streamid','url').distinct()
             imgs = FaceImgModel.objects.filter(userid_id=faceid).values('userid_id', 'imgurl')
             imgs = list(imgs)
+            if len(checks) == 0:
+                return JsonResponse(data={}, code='-1', msg='无效的faceid')
             return JsonResponse(data={'list': list(checks), 'count': len(checks), 'imgList':imgs}, code='999999', msg='success')
         #faceid和streamid都有
         elif ((faceid != 'None' and faceid != '') and (streamid != 'None' and streamid != '')):
