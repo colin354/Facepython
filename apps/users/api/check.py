@@ -105,7 +105,10 @@ class Check(APIView):
             imgs = list(imgs)
             if len(checks) == 0:
                 return JsonResponse(data={}, code='-1', msg='无效的faceid')
-            return JsonResponse(data={'list': list(checks), 'count': len(checks), 'imgList':imgs}, code='999999', msg='success')
+            checks = list(checks)
+            for check in checks:
+                check['facename'] = FaceModel.objects.get(pk=int(check['faceid'])).username
+            return JsonResponse(data={'list': checks, 'count': len(checks), 'imgList':imgs}, code='999999', msg='success')
         #faceid和streamid都有
         elif ((faceid != 'None' and faceid != '') and (streamid != 'None' and streamid != '')):
             checks = CheckModel.objects.filter(faceid=faceid, streamid=streamid).values('faceid', 'time', 'imgurl','c_threshold')
