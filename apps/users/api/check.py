@@ -70,6 +70,7 @@ class Check(APIView):
             for ind, item in enumerate(checks):
                 rets = []
                 faceid = item['faceid']
+                item['facename'] = FaceModel.objects.get(pk=faceid).username
                 if faceid in faceids:
                     continue
                 faceids.add(faceid)
@@ -86,6 +87,7 @@ class Check(APIView):
                     img[0]['username'] = username
                     #img[0]['locations'] = rets
                     imgs.append(img[0])
+            checks = sorted(checks, key=lambda checks: checks['facename'], reverse=False)
             return JsonResponse(data={'list': checks, 'count': len(checks), 'imgList':imgs}, code='999999', msg='success')
         # 获取某一个具体人脸的信息，只有faceid，没有streamid
         elif ((faceid != 'None' and faceid != '') and (streamid == 'None' or streamid == '')):
@@ -106,6 +108,15 @@ class Check(APIView):
                 #item['imgurl'] = settings.FACE_IMG_CHECK_ROOT_URL+item['imgurl']
             return JsonResponse(data={'list': list(checks_list), 'count': len(checks_list)}, code='999999', msg='success')
         else:
+            return JsonResponse(data={}, code="999999", msg="成功")
+
+
+    def delete(self, request, *args, **kwargs):
+        checks = CheckModel.objects.all()
+        if len(checks) == 0:
+            return JsonResponse(data={}, code="-1", msg="无记录")
+        else:
+            checks.delete()
             return JsonResponse(data={}, code="999999", msg="成功")
 
 

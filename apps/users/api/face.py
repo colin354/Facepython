@@ -162,6 +162,7 @@ class FaceView(APIView):
                 imgurlRoot = settings.FACE_IMG_ROOT_URL + str(serializer.data[i]['id'])
                 faceid = str(serializer.data[i]['id'])
                 serializer.data[i]['imgdir'] = imgurlRoot
+                serializer.data[i]['createDate'] = serializer.data[i]['createDate'].replace("T"," ")
                 serializer.data[i]['imgurls'] = self.dealImgUrls(
                     list(FaceImgModel.objects.filter(userid__exact=serializer.data[i]['id']).values_list('imgurl')))
                 if faceid in faceids:
@@ -177,7 +178,7 @@ class FaceView(APIView):
                                 msg='success')
         #如果在pararms里带上了limit、page和username
         elif (limit != None and page !=None) and (username != None and username != ''):
-            faces = Face.objects.filter(username = username)
+            faces = Face.objects.filter(username__contains = username)
             serializer = FaceSerializer(faces, many=True)
             for i in range(len(serializer.data)):
                 imgurlRoot = settings.FACE_IMG_ROOT_URL + str(serializer.data[i]['id'])
