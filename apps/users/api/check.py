@@ -46,7 +46,6 @@ class Check(APIView):
                 newlist = {}
                 newlist1 = {}
                 face_id = int(face["faceid"])
-                print(face_id)
                 newlist['facename'] = FaceModel.objects.get(pk=face_id).username
                 newlist['faceurl']  = FaceImgModel.objects.filter(userid = face_id).values('imgurl')[0]['imgurl']
                 newlist['facecount'] = len(checks.filter(faceid=face['faceid']))
@@ -158,26 +157,17 @@ def getfacemarkers(data,fid):
     url = {}
     reback = {}
     i = 0
-    print(len(facechecks))
     for marker in facechecks:
         i += 1
-        print(i)
-        print(marker.id)
         newlist={}
         newlist['time'] = marker.time
-        print("22222222")
-        print("333333333333")
         newlist['imgurl'] = settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl
-        print("44444444444")
         newlist['threshold'] = marker.c_threshold
         time=marker.time
         time = [str(time),int(time)][int(time)==time]
         mark[time] =""
         url[time] = settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl
-
         back.append(newlist)
-
-
     #给列表back按照列表内字典的time来做升序
     reback['facetime'] = sorted(back, key=lambda back:back['time'], reverse=False)
     reback['marks'] = mark
