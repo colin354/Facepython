@@ -162,6 +162,7 @@ class FaceView(APIView):
                 imgurlRoot = settings.FACE_IMG_ROOT_URL + str(serializer.data[i]['id'])
                 faceid = str(serializer.data[i]['id'])
                 serializer.data[i]['imgdir'] = imgurlRoot
+                #消除createDate里的字母“T”
                 serializer.data[i]['createDate'] = serializer.data[i]['createDate'].replace("T"," ")
                 serializer.data[i]['imgurls'] = self.dealImgUrls(
                     list(FaceImgModel.objects.filter(userid__exact=serializer.data[i]['id']).values_list('imgurl')))
@@ -183,6 +184,8 @@ class FaceView(APIView):
             for i in range(len(serializer.data)):
                 imgurlRoot = settings.FACE_IMG_ROOT_URL + str(serializer.data[i]['id'])
                 serializer.data[i]['imgdir'] = imgurlRoot
+                # 消除createDate里的字母“T”
+                serializer.data[i]['createDate'] = serializer.data[i]['createDate'].replace("T", " ")
                 serializer.data[i]['imgurls'] = self.dealImgUrls(
                     list(FaceImgModel.objects.filter(userid__exact=serializer.data[i]['id']).values_list('imgurl')))
             return JsonResponse(data={'list': serializer.data, 'count': len(serializer.data)}, code='999999',
