@@ -1,13 +1,11 @@
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from users.common.api_response import JsonResponse
-from apps.users.models import Stream , Check
+from apps.users.models import Stream , Check , PersonReid
 from apps.users.serializers import StreamSerializer
 from rest_framework import serializers
 from apps.users.utility import TokenVerify
-from django.conf import settings
 import cv2
-import os, shutil
 
 class StreamCheck(APIView):
     def post(self, request, *args, **kwargs):
@@ -21,9 +19,6 @@ class StreamAddorupload(APIView):
     # 调用Token验证
     @TokenVerify
     def post(self, request, *args, **kwargs):
-        serializer = StreamSerializer(data=request.data)
-        if serializer.is_valid()==False:
-            return JsonResponse(data=serializer.errors, code="-1", msg="新增失败 该视频已存在")
         cap = cv2.VideoCapture(request.data['streamurl'])
         if cap.isOpened():  # 当成功打开视频时cap.isOpened()返回True,否则返回False
             rate = cap.get(5)  # 帧速率
@@ -36,8 +31,9 @@ class StreamAddorupload(APIView):
             serializer = StreamSerializer(data=request.data)
             if serializer.is_valid():
                 print('11111111111111111111111111')
-                serializer.save()
+                stream = serializer.save()
                 return JsonResponse(data={}, code="999999", msg="成功")
+            return JsonResponse(data=serializer.errors, code="-1", msg="失败")
         return JsonResponse(data={}, code="-1", msg="无效的streamurl")
 
 #修改功能
@@ -70,25 +66,10 @@ class StreamAddorupload(APIView):
     # 调用Token验证
     @TokenVerify
     def delete(self, request, *args, **kwargs):
-        #逻辑删除
-        # for data_id in request.data:
-        #     stream = Stream.objects.get(id=data_id)
-        #     stream.flag = Stream.DELETE
-        #     stream.save()
         for data_id in request.data:
-            #获取url本地文件全路径
-            streamurl =  Stream.objects.get(id=data_id).streamurl
-            streamurl = '/'+streamurl.strip('/').split('/')[-2]+'/'+streamurl.strip('/').split('/')[-1]
-            src_file_dir = settings.MEDIA_ROOT + streamurl
-            print(src_file_dir)
-            # 删除stream表中的记录
-            streams = Stream.objects.get(id=data_id).delete()
-            # 删除真实的视频文件
-            if os.path.isfile(src_file_dir) == True:
-                os.remove(src_file_dir)
-            #删除check表中对应的记录
-            check = Check.objects.filter(streamid=data_id).delete()
-
+            stream = Stream.objects.get(id=data_id)
+            stream.flag = Stream.DELETE
+            stream.save()
         return JsonResponse(data={}, code='999999', msg='成功')
 
 
@@ -99,7 +80,7 @@ class StreamView(APIView):
     @TokenVerify
     def get(self, request, *args, **kwargs):
         # print("111111111111111111111111111")
-        print(request.GET.get('map_location'))
+        # print(request.GET.get('map_location'))
         # print("222222222222222222222222222")
         #params里带map_location摄像头位置预览的GET请求获取所谓视频信息用于做点标记
         if(request.GET.get('map_location') == 'GETLOCATION'):
@@ -158,12 +139,12 @@ class StreamView(APIView):
             streamsall = Stream.objects.all().values('id','streamname','streamlocation','streamurl','streamlat','streamlon','flag','createDate','streamtime','streamfps','streamstatus')
             streams = streamsall[start:end]
             for stream in streams:
-                stream['check_match'] = len(Check.objects.filter(streamid=stream['id']))
+                stream['check_match'] = len(Check.objects.filter(streamid=stream['id']))+len(PersonReid.objects.filter(streamid=stream['id']))
             newlist = {}
             newlist['videonum'] = len(streamsall)
             newlist['finishmatch'] = len(Stream.objects.filter(streamstatus='1'))
-            newlist['check_num'] = len(Check.objects.all())
-            newlist['check_percentage'] = 0 if (newlist['videonum'] == 0) else (int(newlist['finishmatch'] / newlist['videonum'] * 100))
+            newlist['check_num'] = len(Check.objects.all())+len(PersonReid.objects.all())
+            newlist['check_percentage'] = 0 if (newlist['videonum']==0) else (int(newlist['finishmatch'] / newlist['videonum'] * 100))
             #serializer = StreamSerializer(streams, many=True)
             #print(serializer)
             return JsonResponse(data={'list': streams, 'count': len(streamsall),'check_info':newlist}, code='999999',

@@ -1,0 +1,18 @@
+from rest_framework.views import APIView
+from users.common.api_response import JsonResponse
+from apps.users.serializers import CheckSerializer
+from django.conf import settings
+
+from collections import OrderedDict
+
+class Camera(APIView):
+
+    def post(self, request, *args, **kwargs):
+        print("face record post")
+        return JsonResponse(data={}, code="999999", msg="成功")
+
+    def get(self, request, *args, **kwargs):
+        print("face record get!")
+        return JsonResponse(data={}, code="999999", msg="成功")
+
+cameras = Camera.as_view()

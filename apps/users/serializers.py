@@ -5,6 +5,7 @@ from apps.users.models import Face
 from apps.users.models import FaceImg
 from apps.users.models import Check
 from apps.users.models import Stream
+from apps.users.models import Camera,Stranger,CameraUrl,PersonReid,PersonDetect
 
 class TokenSerializer(serializers.ModelSerializer):
     """
@@ -34,7 +35,7 @@ class FaceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Face
-        fields = ('username', 'mobile', 'gender', 'email', 'flag', 'id', 'createDate')
+        fields = ('username', 'mobile', 'gender', 'email', 'flag', 'id', 'createDate','face_flag')
 
 class CheckSerializer(serializers.ModelSerializer):
 
@@ -56,3 +57,65 @@ class StreamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Stream
         fields = ('id','streamname','streamlocation','streamurl','streamlat','streamlon','createDate', 'streamtime', 'streamstatus', 'streamfps')
+
+
+class StrangerSerializer(serializers.ModelSerializer):
+    """
+    陌生人信息
+    """
+    class Meta:
+        model = Stranger
+        fields = ('faceid','c_gender','c_age','imgurl')
+
+
+class CameraSerializer(serializers.ModelSerializer):
+    """
+    摄像头信息
+    """
+    class Meta:
+        model = Camera
+        fields = ('id','cameraname','cameralocation','cameralat','cameralon','c_ip','c_username', 'c_password', 'createDate')
+
+
+class CameraUrlSerializer(serializers.ModelSerializer):
+    """
+    视频流信息
+    """
+    class Meta:
+        model = CameraUrl
+        fields = ('id','cameraid','streamurl','streamtime','streamfps','streamstatus')
+
+
+# class FaceRecordSerializer(serializers.ModelSerializer):
+#     """
+#     摄像头信息
+#     """
+#     class Meta:
+#         model = FaceRecord
+#         fields = ('id','faceid','cameraid','c_x','c_y','c_w','c_h', 'c_ip', 'createDate','c_threshold','url','imgurl')
+
+class PersonReidSerializer(serializers.ModelSerializer):
+    """
+    行人重识别
+    """
+    class Meta:
+        model = PersonReid
+        fields = ('faceid','streamid','imgurl','url','c_threshold','timestap','query_imgurl','c_x','c_y','c_w','c_h','time')
+
+
+# class PersonTopSerializer(serializers.ModelSerializer):
+#     """
+#     行人重识别top5
+#     """
+#
+#     class Meta:
+#         model = PersonTop
+#         fields = ('personreid','reid_imgurl','timestap','confidence')
+class PersonDetcetSerializer(serializers.ModelSerializer):
+
+    """
+    行人重识别检测
+    """
+    class Meta:
+        model = PersonDetect
+        fields = ('person_id','c_x','c_y','c_w','c_h','url','timestap','dec_img_url')

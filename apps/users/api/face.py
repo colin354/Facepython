@@ -5,12 +5,11 @@ from django.core.exceptions import ObjectDoesNotExist
 from apps.users.models import Face
 from django.conf import settings
 from django.contrib.auth.models import User
-from apps.users.serializers import FaceSerializer
+from apps.users.serializers import FaceSerializer,StrangerSerializer
 from rest_framework.parsers import JSONParser
 from apps.users.utility import TokenVerify
 from apps.users.models import FaceImg as FaceImgModel
 from apps.users.models import Face as FaceModel
-from apps.users.models import Check as CheckModel
 import os, shutil
 import pdb
 
@@ -81,13 +80,16 @@ class FaceImg(APIView):
             # file_addr_not_in_temp = settings.MEDIA_ROOT+'/'+ userid + '/'+img
             file_addr_not_in_temp = settings.MEDIA_ROOT + '/image/' + userid + '/' + img
             print(userid)
+            # print(file_addr_in_temp)
             print(file_addr_not_in_temp)
             # if os.path.isfile(file_addr_in_temp):
+            #     print("11111111111111111")
             #     os.remove(file_addr_in_temp)
             if os.path.isfile(file_addr_not_in_temp):
                 print("2222222222")
                 # imgurl = settings.FACE_IMG_ROOT_URL + str(userid)+'/'+img
                 # imgurl = settings.FACE_IMG_ROOT_URL + 'image/' + str(userid) + '/' + img
+                # print(imgurl)
                 # FaceImgModel.objects.filter(imgurl__exact=imgurl).delete()
                 # os.remove(file_addr_not_in_temp)
                 # 此处添加修改时删除图片后点取消，可以返回到之前的状态
@@ -105,18 +107,15 @@ class FaceView(APIView):
         print("now post api face")
         serializer = FaceSerializer(data=request.data)
         if serializer.is_valid():
+            serializer.save()
             UUID = request.GET.get("uuid")
             if UUID == None:
                 return JsonResponse(data={}, code="-1", msg="失败 缺少uuid")
             # 重新命名文件夹
             src_file_dir = settings.MEDIA_ROOT+'temp/'+UUID
+            des_file_dir = settings.MEDIA_ROOT+'/image/'+str(serializer.data['id'])
             #des_file_dir = settings.MEDIA_ROOT+'/'+ str(serializer.data['id'])
-            if os.path.isdir(src_file_dir) == False:
-                return JsonResponse(data={}, code="-1", msg="失败 请添加人脸图片")
-            serializer.save()
-            des_file_dir = settings.MEDIA_ROOT + '/image/' + str(serializer.data['id'])
             os.renames(src_file_dir, des_file_dir)
-            print("重新命名文件夹")
             # 获取外键，图片url前缀
             uid = serializer.data['id']
             face = Face.objects.get(pk=uid)
@@ -162,8 +161,6 @@ class FaceView(APIView):
                 imgurlRoot = settings.FACE_IMG_ROOT_URL + str(serializer.data[i]['id'])
                 faceid = str(serializer.data[i]['id'])
                 serializer.data[i]['imgdir'] = imgurlRoot
-                #消除createDate里的字母“T”
-                serializer.data[i]['createDate'] = serializer.data[i]['createDate'].replace("T"," ")
                 serializer.data[i]['imgurls'] = self.dealImgUrls(
                     list(FaceImgModel.objects.filter(userid__exact=serializer.data[i]['id']).values_list('imgurl')))
                 if faceid in faceids:
@@ -179,13 +176,11 @@ class FaceView(APIView):
                                 msg='success')
         #如果在pararms里带上了limit、page和username
         elif (limit != None and page !=None) and (username != None and username != ''):
-            faces = Face.objects.filter(username__contains = username)
+            faces = Face.objects.filter(username = username)
             serializer = FaceSerializer(faces, many=True)
             for i in range(len(serializer.data)):
                 imgurlRoot = settings.FACE_IMG_ROOT_URL + str(serializer.data[i]['id'])
                 serializer.data[i]['imgdir'] = imgurlRoot
-                # 消除createDate里的字母“T”
-                serializer.data[i]['createDate'] = serializer.data[i]['createDate'].replace("T", " ")
                 serializer.data[i]['imgurls'] = self.dealImgUrls(
                     list(FaceImgModel.objects.filter(userid__exact=serializer.data[i]['id']).values_list('imgurl')))
             return JsonResponse(data={'list': serializer.data, 'count': len(serializer.data)}, code='999999',
@@ -265,21 +260,30 @@ class FaceView(APIView):
     def delete(self, request, *args, **kwargs):
         ids = request.data
         for id in ids:
-            #删除faceimg表数据
             face_img = FaceImgModel.objects.filter(userid_id=id).delete()
-            #删除face表中数据
             face = Face.objects.get(id=id).delete()
-            #删除本地图片
             src_file_dir = settings.MEDIA_ROOT+'/image/'+str(id)
-            print(src_file_dir)
             if os.path.isdir(src_file_dir) == True:
                 shutil.rmtree(src_file_dir)
-            #删除chec表中对应记录
-            checks = CheckModel.objects.filter(faceid=id).delete()
+
         #face.flag = Face.DELETE
         #face.save()
         return JsonResponse(data={}, code='999999', msg='成功')
 
 
+class StrangerView(APIView):
+
+    def post(self,request,*args,**kwargs):
+        print("now stranger new post!!!!!!!!!!!!!!!!!!!!")
+        print(request.data)
+        serializer = StrangerSerializer(data=request.data)
+        print(serializer)
+        if serializer.is_valid():
+            #这里可以解析post上传数据，再存储，目前做个简单的
+            serializer.save()
+            return JsonResponse(data={}, code="999999", msg="成功")
+        return JsonResponse(data=serializer.errors, code="999999", msg="失败")
+
 face_img = FaceImg.as_view()
 faces = FaceView.as_view()
+strangers= StrangerView.as_view()

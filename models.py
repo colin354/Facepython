@@ -94,6 +94,7 @@ class Check(models.Model):
         verbose_name = "匹配信息"
         verbose_name_plural = verbose_name
 
+
 class Stream(models.Model):
     """
     流信息
@@ -116,3 +117,77 @@ class Stream(models.Model):
         verbose_name        = "流信息"
         verbose_name_plural = verbose_name
 
+class LocalFace(models.Model):
+    """
+    本地人脸库（业主信息、小区流动人口信息）
+    """
+    NEW, UPDATE, DELETE = 0, 1, 2
+    FLAG_CHOICE = (
+        (0, 'new'),
+        (1, 'update'),
+        (2, 'delete'),
+    )
+    facename     = models.CharField(max_length=50, verbose_name="姓名")
+    facegender   = models.CharField(max_length=10, verbose_name="性别")
+    faceage      = models.CharField(max_length=10, verbose_name="年龄")
+    IDCardNum    = models.CharField(max_length=100, verbose_name="身份证号码")
+    address      = models.CharField(max_length=100, verbose_name="地址")
+    PhoneNum     = models.CharField(max_length = 24 , verbose_name= "手机号码")
+    flag         = models.IntegerField(choices=FLAG_CHOICE, default=0)
+    createDate   = models.DateTimeField(auto_now_add=True)
+
+
+
+    class Meta:
+        verbose_name        = "小区人员信息"
+        verbose_name_plural = verbose_name
+
+
+
+class LocalFaceImg(models.Model):
+    """
+        本地人脸库（业主信息、小区流动人口信息）对应的人脸照片地址
+    """
+
+    userid = models.ForeignKey('LocalFace', on_delete=models.CASCADE)
+    imgurl = models.URLField(verbose_name="照片地址", null=True)
+
+    class Meta:
+        verbose_name = "本地人脸图片地址"
+        verbose_name_plural = verbose_name
+
+class Camera(models.Model):
+    """
+        本地摄像头库
+    """
+    cameraname     = models.CharField(max_length=50, verbose_name="摄像头名称")
+    cameralocation = models.CharField(max_length=50, verbose_name="摄像头位置")
+    cameralat      = models.CharField(max_length=24, verbose_name="纬度")
+    cameralon      = models.CharField(max_length=24, verbose_name="经度")
+    createDate     = models.DateTimeField(auto_now_add=True)
+    # 缺少前端显示实时视频的一些信息 待定
+
+    class Meta:
+        verbose_name = "摄像头信息"
+        verbose_name_plural = verbose_name
+
+
+class FaceRecord(models.Model):
+
+    # faceid = models.ForeignKey('Face', on_delete=models.CASCADE)
+    # streamid = models.ForeignKey('Stream', on_delete=models.CASCADE)
+    faceid = models.CharField(max_length=10, verbose_name='人脸ID')
+    cameraid = models.CharField(max_length=256, verbose_name='摄像头ID')
+    c_x = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框x")
+    c_y = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框y")
+    c_w = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框w")
+    c_h = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框h")
+    c_ip = models.CharField(max_length=15, null=True, blank=True, verbose_name="ip")
+    c_threshold = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测阈值")
+    url = models.CharField(max_length=100, null=True, verbose_name="流url")
+    imgurl = models.CharField(max_length=100, null=True, verbose_name="图片url")
+    createDate = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "人脸识别记录信息"
+        verbose_name_plural = verbose_name
