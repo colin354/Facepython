@@ -5,7 +5,7 @@ from apps.users.models import Face
 from apps.users.models import FaceImg
 from apps.users.models import Check
 from apps.users.models import Stream
-from apps.users.models import Camera,Stranger,CameraUrl,PersonReid,PersonDetect
+from apps.users.models import Camera,Stranger,CameraStream,PersonReid,PersonDetect,MatchUp
 
 class TokenSerializer(serializers.ModelSerializer):
     """
@@ -74,16 +74,16 @@ class CameraSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Camera
-        fields = ('id','cameraname','cameralocation','cameralat','cameralon','c_ip','c_username', 'c_password', 'createDate')
+        fields = ('id','cameraName','cameraLocation','cameraLat','cameraLon','c_ip','c_username', 'c_password', 'c_token')
 
 
-class CameraUrlSerializer(serializers.ModelSerializer):
+class CameraStreamSerializer(serializers.ModelSerializer):
     """
     视频流信息
     """
     class Meta:
-        model = CameraUrl
-        fields = ('id','cameraid','streamurl','streamtime','streamfps','streamstatus')
+        model = CameraStream
+        fields = ('id','cameraId','streamUrl','streamTime','streamFps','streamStatus','startTime')
 
 
 # class FaceRecordSerializer(serializers.ModelSerializer):
@@ -118,4 +118,13 @@ class PersonDetcetSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = PersonDetect
-        fields = ('person_id','c_x','c_y','c_w','c_h','url','timestap','dec_img_url')
+        fields = ('person_id','c_x','c_y','c_w','c_h','url','timestap','dec_img_url','c_threshold')
+
+
+class MatchUpSerializer(serializers.ModelSerializer):
+    """
+    对应关系表
+    """
+    class Meta:
+        model = MatchUp
+        fields = ("person_id","faceid")

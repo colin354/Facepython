@@ -154,25 +154,26 @@ class Camera(models.Model):
     """
         本地摄像头库
     """
-    cameraname     = models.CharField(max_length=50, verbose_name="摄像头名称")
-    cameralocation = models.CharField(max_length=50, verbose_name="摄像头位置")
-    cameralat      = models.CharField(max_length=24, verbose_name="纬度")
-    cameralon      = models.CharField(max_length=24, verbose_name="经度")
-    c_ip           = models.CharField(max_length=24, verbose_name="摄像头ip地址")
-    c_username     = models.CharField(max_length=24, verbose_name="摄像头用户名")
-    c_password     = models.CharField(max_length=24, verbose_name="摄像头密码")
-    createDate     = models.DateTimeField(auto_now_add=True)
+    cameraName     = models.CharField(max_length=50, verbose_name="摄像头名称")
+    cameraLocation = models.CharField(max_length=50, verbose_name="摄像头位置")
+    cameraLat      = models.CharField(max_length=24, verbose_name="纬度")
+    cameraLon      = models.CharField(max_length=24, verbose_name="经度")
+    c_ip           = models.CharField(max_length=24, null = True ,verbose_name="摄像头ip地址")
+    c_username     = models.CharField(max_length=24, null = True ,verbose_name="摄像头用户名")
+    c_password     = models.CharField(max_length=24, null = True ,verbose_name="摄像头密码")
+    c_token        = models.CharField(max_length=24, null = True ,verbose_name="摄像头token")
 
     class Meta:
         verbose_name = "摄像头信息"
         verbose_name_plural = verbose_name
 
-class CameraUrl(models.Model):
-    cameraid = models.ForeignKey('Camera', on_delete=models.CASCADE)
-    streamurl = models.URLField(verbose_name="视频地址", null=True)
-    streamtime = models.CharField(max_length=256, null=True, blank=True, verbose_name="流time")
-    streamfps = models.CharField(max_length=256, null=True, blank=True, verbose_name="流fps")
-    streamstatus = models.CharField(max_length=256, null=True, blank=True, verbose_name="流status")
+class CameraStream(models.Model):
+    streamUrl = models.URLField(verbose_name="视频地址", null=True)
+    streamTime = models.CharField(max_length=256, null=True, blank=True, verbose_name="流time")
+    streamFps = models.CharField(max_length=256, null=True, blank=True, verbose_name="流fps")
+    streamStatus = models.CharField(max_length=256, null=True, blank=True, verbose_name="流status")
+    startTime = models.DateTimeField()
+    cameraId = models.ForeignKey('Camera', on_delete=models.CASCADE)
 
 
     class Meta:
@@ -247,6 +248,7 @@ class PersonDetect(models.Model):
     c_y = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框y")
     c_w = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框w")
     c_h = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框h")
+    c_threshold = models.CharField(max_length=10, null=True, blank=True, verbose_name="置信度")
     url = models.CharField(max_length=100, verbose_name="流url")
     timestap = models.CharField(max_length=100, verbose_name="时间戳")
     dec_img_url = models.CharField(max_length=100, verbose_name="检测图片地址")
@@ -255,3 +257,11 @@ class PersonDetect(models.Model):
     class Meta:
         verbose_name = "行人检测信息"
         verbose_name_plural = verbose_name
+
+class MatchUp(models.Model):
+    person_id = models.CharField(max_length=24, null=True, blank=True, verbose_name="行人ID")
+    faceid = models.CharField(max_length=10, verbose_name='人脸ID')
+
+    class Meta:
+        verbose_name="对应关系表"
+        verbose_name_plural=verbose_name

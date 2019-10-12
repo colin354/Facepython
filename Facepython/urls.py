@@ -21,7 +21,7 @@ from users.api import user,face,stream,facerecord,camera
 from django.views.generic import TemplateView
 from django.conf.urls.static import static
 from django.conf import settings
-from users.api import check,person
+from users.api import check,person,match
 urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^admin/', admin.site.urls),
@@ -47,4 +47,5 @@ urlpatterns = [
     url(r'^sys/check',check.check_track),
     #url(r'^api/check/location', check.check_location),
     url(r'^api/person',person.person_detect),
+    url(r'^api/match',match.match_up),
     url(r'^', TemplateView.as_view(template_name="index.html"))] + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -5,7 +5,7 @@ from apps.users.models import Face
 from apps.users.models import FaceImg
 from apps.users.models import Check
 from apps.users.models import Stream
-from apps.users.models import Camera,Stranger,CameraUrl,PersonReid
+from apps.users.models import Camera,Stranger,CameraUrl,PersonReid,PersonDetect
 
 class TokenSerializer(serializers.ModelSerializer):
     """
@@ -111,3 +111,11 @@ class PersonReidSerializer(serializers.ModelSerializer):
 #     class Meta:
 #         model = PersonTop
 #         fields = ('personreid','reid_imgurl','timestap','confidence')
+class PersonDetcetSerializer(serializers.ModelSerializer):
+
+    """
+    行人重识别检测
+    """
+    class Meta:
+        model = PersonDetect
+        fields = ('person_id','c_x','c_y','c_w','c_h','url','timestap','dec_img_url','c_threshold')

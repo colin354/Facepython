@@ -240,3 +240,19 @@ class PersonReid(models.Model):
 #     class Meta:
 #         verbose_name = "行人重识别TOP5图片"
 #         verbose_name_plural = verbose_name
+
+class PersonDetect(models.Model):
+    person_id = models.CharField(max_length=24, null=True, blank=True, verbose_name="流time")
+    c_x = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框x")
+    c_y = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框y")
+    c_w = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框w")
+    c_h = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框h")
+    c_threshold = models.CharField(max_length=10, null=True, blank=True, verbose_name="置信度")
+    url = models.CharField(max_length=100, verbose_name="流url")
+    timestap = models.CharField(max_length=100, verbose_name="时间戳")
+    dec_img_url = models.CharField(max_length=100, verbose_name="检测图片地址")
+
+
+    class Meta:
+        verbose_name = "行人检测信息"
+        verbose_name_plural = verbose_name
