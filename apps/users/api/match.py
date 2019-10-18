@@ -17,34 +17,62 @@ class matchUp(APIView):
         checks = CheckModel.objects.all().values("url","timestap","c_x","c_y","c_w","c_h","c_threshold","faceid")
         #persondetect = PersonDetectModel.objects.all().values("url","timestap","c_x","c_y","c_w","c_h","c_threshold")
         for check in checks:
-            print("1111111111111111111111111111111")
-            print(check['url'])
+            # print("1111111111111111111111111111111")
+            # print(check['url'])
             persondetects = PersonDetectModel.objects.filter(url=check['url'])
-            print(persondetects)
+            # print(persondetects)
             if len(persondetects) == 0:
                 continue
-            print(check['timestap'])
-            persondetects = persondetects.filter(timestap = check['timestap']).values("url", "timestap", "c_x", "c_y", "c_w", "c_h", "c_threshold","person_id")
-            print(persondetects)
+            # print(check['timestap'])
+            persondetects = persondetects.filter(timestap = check['timestap']).values("url", "timestap", "c_x", "c_y", "c_w", "c_h", "c_threshold","person_id",'dec_img_url')
+            # print(persondetects)
             if len(persondetects) == 0:
                 continue
             # pesondetects = persondetects.values("url", "timestap", "c_x", "c_y", "c_w", "c_h", "c_threshold","person_id")
             for persondetect in persondetects:
                 arr = []
                 arr1 = [int(check['c_x']),int(check['c_y']),int(check['c_x'])+int(check['c_w']),int(check['c_y'])+int(check['c_h']),float(check['c_threshold'])]
-                print(arr1)
+                # print(arr1)
                 arr.append(arr1)
-                print("1111111111111111111111111111111")
-                print(persondetect['c_x'])
+                # print("1111111111111111111111111111111")
+                # print(persondetect['c_x'])
                 arr2 = [int(persondetect['c_x']),int(persondetect['c_y']),int(persondetect['c_x'])+int(persondetect['c_w']),int(persondetect['c_y'])+int(persondetect['c_h']),float(persondetect['c_threshold'])]
                 arr.append(arr2)
-                print(arr2)
+                # print(arr2)
                 arr = np.array(arr)
                 rcv = py_cpu_nms(arr)
-                print(rcv)
+                # print(rcv)
                 if len(rcv)>1:
-                    matchup= MatchUpModel(person_id= persondetect['person_id'],faceid=check["faceid"])
-                    matchup.save()
+                    try:
+                        matchup = MatchUpModel.objects.get(faceid=check['faceid'])
+                        if float(matchup.c_threshold)< float(check['c_threshold']):
+                            matchup.person_id= persondetect['person_id']
+                            matchup.c_threshold = check['c_threshold']
+                            matchup.dec_img_url = persondetect['dec_img_url']
+                            matchup.save()
+                    except:
+                        matchup = MatchUpModel(person_id=persondetect['person_id'], faceid=check["faceid"],
+                                               c_threshold=check['c_threshold'],dec_img_url=persondetect['dec_img_url'])
+                        matchup.save()
+                    # if len(matchups) == 0:
+                    #     matchup= MatchUpModel(person_id= persondetect['person_id'],faceid=check["faceid"],c_threshold = check['c_threshold'])
+                    #     matchup.save()
+                    # else:
+                    #     print("22222222222222222222222222")
+                    #     matchup = matchups[0]
+                    #     print(matchup['faceid'])
+                    #     if float(matchup['c_threshold'])< float(check['c_threshold']):
+                    #         # list = {}
+                    #         # list['faceid'] = check['faceid']
+                    #         # list['c_threshold'] = check['c_threshold']
+                    #         # list['person_id'] = persondetect['person_id']
+                    #         # serializer = MatchUpSerializer(matchup,data=list)
+                    #         # if serializer.is_valid():
+                    #         #     serializer.save()
+                    #         print('333333333333333333333333333333')
+                    #         matchup['c_threshold'] = check['c_threshold']
+                    #         matchup['person_id'] = persondetect['person_id']
+                    #         matchup.save()
         return JsonResponse(data={}, code='999999', msg='成功')
 
 def py_cpu_nms(dets):
@@ -73,9 +101,9 @@ def py_cpu_nms(dets):
         h = np.maximum(0.0, yy2 - yy1 + 1)
         inter = w * h
         ovr = inter / areas[i]
-        print("11111111111111111111111")
-        print(ovr)
-        print("111111111111111111111111")
+        # print("11111111111111111111111")
+        # print(ovr)
+        # print("111111111111111111111111")
         inds = np.where(ovr >= thresh)[0]
 
         inds = inds + 1

@@ -2,16 +2,12 @@ from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from users.common.api_response import JsonResponse
 from apps.users.models import Camera,CameraStream
-from apps.users.serializers import CameraSerializer,CameraStreamSerializer,StreamSerializer
+from apps.users.serializers import CameraSerializer,CameraStreamSerializer
 from rest_framework import serializers
 from apps.users.utility import TokenVerify
 from apps.users.models import CameraStream as CameraStreamModel
-from django.conf import settings
-import os
-import cv2
-import datetime
 
-class CameraView(APIView):
+class DetectView(APIView):
 
     @TokenVerify
     def post(self,request,*args,**kwargs):
@@ -119,64 +115,5 @@ class CameraStream(APIView):
         serializers = CameraStreamSerializer(camerastreams,many=True)
         return JsonResponse(data=serializers.data, code='999999', msg='success')
 
-class CameraRecord(APIView):
-    def post(self,request,*args,**kwargs):
-        print('colin: new')    
-        print(request.data)
-        print(request.data['cameraId'])
-        cameraId = request.data['cameraId']
-        camera = Camera.objects.get(pk = cameraId)
-        serializer = CameraSerializer(camera)
-        print(serializer.data)
-        print(serializer.data['c_token'])
-        filepath = settings.CAMERA_RECORD_BASE_URL + serializer.data['c_token']
-        file_list = getfilelist(filepath)
-        print((file_list[0]))
-        stream_data = {}
-        for i in range(0, len(file_list)):
-            #print(file_list[i])
-            stream_data['streamname'] =  str(i) + '-' + file_list[i].split(serializer.data['c_token'])[1]
-            stream_data['streamlocation'] = serializer.data['cameraName'] + serializer.data['cameraLocation']
-            stream_data['streamurl'] = settings.RECORD_ROOT_URL + file_list[i].split('record/')[1]
-            stream_data['streamlat'] = serializer.data['cameraLat']
-            stream_data['streamlon'] = serializer.data['cameraLon']
-            stream_data['flag'] = '0'
-            stream_data['streamstatus'] = '0'
-            cap = cv2.VideoCapture(file_list[i])
-            if cap.isOpened():  # 当成功打开视频时cap.isOpened()返回True,否则返回False
-                rate = cap.get(5)  # 帧速率
-                frame_number = cap.get(7)  # 视频文件的帧数
-                seconds = frame_number / rate
-                rate = ("%.1f" % rate)
-                seconds = ("%.1f" % seconds)
-                streamfps_value = str(rate)
-                streamtime_value = str(seconds)
-            stream_data['streamfps'] = streamfps_value
-            stream_data['streamtime'] = streamtime_value
-            stream_serializer = StreamSerializer(data=stream_data)
-            if stream_serializer.is_valid():
-                stream = stream_serializer.save()
-            print(stream_serializer.data)
-
-        return JsonResponse(data=serializer.data, code="999999", msg="成功")
-    def get(self,request,*args,**kwargs):
-        print('colin: new')    
-        print(request.data)
-        return JsonResponse(data={}, code="999999", msg="成功")
-
-#遍历文件及子文件的所有文件
-def getfilelist(filepath):
-    filelist = os.listdir(filepath)
-    files = []
-    for i in range(len(filelist)):
-        child = os.path.join('%s/%s' % (filepath, filelist[i]))
-        if os.path.isdir(child):
-            files.extend(getfilelist(child))
-        else:
-            if '.mp4' in child:
-                files.append(child)
-    return files
-
 cameras = CameraView.as_view()
 camera_stream = CameraStream.as_view()
-camera_record = CameraRecord.as_view()

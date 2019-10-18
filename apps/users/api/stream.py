@@ -92,12 +92,13 @@ class StreamView(APIView):
                 ret1 = {}
                 ret1['label']=streamlocation['streamlocation']
                 ret1['streamlng'] = []
-                streamnames = Stream.objects.filter(streamlocation=streamlocation['streamlocation']).values('streamname','id','streamlon','streamlat')
+                streamnames = Stream.objects.filter(streamlocation=streamlocation['streamlocation']).values('streamname','id','streamlon','streamlat','streamurl')
                 ret2 = []
                 for streamname in streamnames:
                     ret3 = {}
                     ret3['id'] = streamname['id']
                     ret3['label'] = streamname['streamname']
+                    ret3['streamUrl'] = streamname['streamurl']
                     ret3['streamlng'] = []
                     ret3['streamlng'].append([streamname['streamlon'],streamname['streamlat']])
                     ret1['streamlng'].append([streamname['streamlon'], streamname['streamlat']])

@@ -127,4 +127,4 @@ class MatchUpSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = MatchUp
-        fields = ("person_id","faceid")
+        fields = ("person_id","faceid",'c_threshold','dec_img_url')

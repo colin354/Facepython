@@ -134,7 +134,7 @@ class Stream(models.Model):
     )
     streamname     = models.CharField(max_length=50, verbose_name="流名称", unique = True)
     streamlocation = models.CharField(max_length=100, verbose_name="流位置")
-    streamurl      = models.CharField(max_length=100, verbose_name="流url")
+    streamurl      = models.CharField(max_length=256, verbose_name="流url")
     streamlat      = models.CharField(max_length = 24 , verbose_name= "纬度",blank=True)
     streamlon      = models.CharField(max_length = 24 , verbose_name= "经度",blank=True)
     flag = models.IntegerField(choices=FLAG_CHOICE, default=0)
@@ -260,7 +260,9 @@ class PersonDetect(models.Model):
 
 class MatchUp(models.Model):
     person_id = models.CharField(max_length=24, null=True, blank=True, verbose_name="行人ID")
-    faceid = models.CharField(max_length=10, verbose_name='人脸ID')
+    faceid = models.CharField(max_length=10,primary_key=True ,verbose_name='人脸ID')
+    c_threshold = models.CharField(max_length=10, verbose_name="置信度")
+    dec_img_url = models.CharField(max_length=100, verbose_name="检测图片地址")
 
     class Meta:
         verbose_name="对应关系表"
