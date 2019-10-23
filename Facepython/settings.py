@@ -40,6 +40,7 @@ FACE_IMG_CHECK_ROOT_URL = 'http://10.2.155.139:8888'
 FACE_IMG_ROOT_URL = "http://10.2.155.139:8888/media/"
 CAMERA_RECORD_BASE_URL = '/opt/h5ss/www/mediastore/record/'
 RECORD_ROOT_URL = 'http://10.2.155.139:8888/record_media/'
+CONF_FILE = '/home/face_detect/base.conf'
 # Application definition
 INSTALLED_APPS = [
     'channels',

@@ -6,18 +6,21 @@ from apps.users.serializers import CameraSerializer,CameraStreamSerializer
 from rest_framework import serializers
 from apps.users.utility import TokenVerify
 from apps.users.models import CameraStream as CameraStreamModel
+from django.conf import settings
+import configparser,json
 
 class DetectView(APIView):
 
     @TokenVerify
     def post(self,request,*args,**kwargs):
         print("now camera new post!!!!!!!!!!!!!!!!!!!!")
-        serializer = CameraSerializer(data=request.data)
-        print(serializer)
-        if serializer.is_valid():
-            serializer.save()
-            return JsonResponse(data={}, code="999999", msg="成功")
-        return JsonResponse(data=serializer.errors, code="999999", msg="失败")
+        print(request.data)
+        conf_file = settings.CONF_FILE
+        config = configparser.ConfigParser()
+        config.read(conf_file,encoding="utf-8")
+        config["detect_state"] = request.data
+        config.write(open(conf_file,mode="w"))
+        return JsonResponse(data="", code="999999", msg="失败")
 
     @TokenVerify
     def put(self,request,*args,**kwargs):
@@ -34,34 +37,16 @@ class DetectView(APIView):
             camerarcv= Camera.objects.get(id=id).delete()
         return JsonResponse(data={}, code='999999', msg='成功')
 
-
     @TokenVerify
     def get(self,request,*args,**kwargs):
-        print("now camera new get!!!!!!!!!!!!!!!!!!!!")
-        cameraid = request.GET.get('id')
-        cameraname = request.GET.get('cameraname')
-        print("now camera new get!!!!!!!!!!!!!!!!!!!!")
-        print(cameraid)
-        print(type(cameraid))
-        if cameraid != None and cameraid != '':
-            ####获取单个camera的信息修改时调用###
-            print(cameraid)
-            cameras = Camera.objects.get(pk=cameraid)
-            serializer = CameraSerializer(cameras)
-            return JsonResponse(data=serializer.data, code='999999', msg='success')
-
-        if cameraname !=None and cameraname !='':
-            ###查询###
-            cameras = Camera.objects.filter(cameraname__contains=cameraname)
-            serializer = CameraSerializer(cameras,many=True)
-            return JsonResponse(data={'list': serializer.data, 'count': len(serializer.data)}, code='999999',
-                                msg='success')
-        ###获取所有camera信息###
-        cameras = Camera.objects.all()
-        serializer = CameraSerializer(cameras, many=True)
-        return JsonResponse(data={'list': serializer.data, 'count': len(serializer.data)}, code='999999',
+        print("now detect_state new get!!!!!!!!!!!!!!!!!!!!")
+        conf_file = settings.CONF_FILE
+        config = configparser.ConfigParser()
+        config.read(conf_file,encoding="utf-8")
+        detect_state = config.get("detect_state","detect_state")
+        print(detect_state)
+        return JsonResponse(data={'detect_state': detect_state,}, code='999999',
                             msg='success')
-
 
 
 class CameraStream(APIView):
@@ -115,5 +100,5 @@ class CameraStream(APIView):
         serializers = CameraStreamSerializer(camerastreams,many=True)
         return JsonResponse(data=serializers.data, code='999999', msg='success')
 
-cameras = CameraView.as_view()
+detect = DetectView.as_view()
 camera_stream = CameraStream.as_view()
