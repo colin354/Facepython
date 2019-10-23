@@ -50,4 +50,5 @@ urlpatterns = [
     #url(r'^api/check/location', check.check_location),
     url(r'^api/person',person.person_detect),
     url(r'^api/match',match.match_up),
+    url(r'^api/videoStruct',stream.video_structred),
     url(r'^', TemplateView.as_view(template_name="index.html"))] + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

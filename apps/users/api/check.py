@@ -13,14 +13,20 @@ from itertools import chain
 
 import random
 
+from apps.users.models import CameraStream as CameraStreamModel
+from apps.users.models import Camera as CameraModel
+
 class Check(APIView):
 
     def post(self, request, *args, **kwargs):
         tempUrl = request.data.get('url')
-        streamid = StreamModel.objects.filter(streamurl=settings.FACE_IMG_CHECK_ROOT_URL+tempUrl).values("id","streamfps")[0]
+        #streamid = StreamModel.objects.filter(streamurl=settings.FACE_IMG_CHECK_ROOT_URL+tempUrl).values("id","streamfps")[0]
+        streamid = CameraStreamModel.objects.filter(streamUrl=settings.FACE_IMG_CHECK_ROOT_URL+tempUrl).values("id","streamFps")[0]
         buf = request.data.copy()
         buf['streamid'] = streamid['id']
-        timebuf = float(buf['timestap'])/float(streamid['streamfps'])
+        ######现在是相对时间，绝对时间的话得加上当前视频流的开始时间
+        # timebuf = float(buf['timestap'])/float(streamid['streamfps'])
+        timebuf = float(buf['timestap']) / float(streamid['streamFps'])
         buf['time'] = str(round(timebuf,2))
         serializer = CheckSerializer(data=buf)
         if serializer.is_valid():
@@ -30,20 +36,24 @@ class Check(APIView):
         return JsonResponse(data=serializer.errors, code="999999", msg="失败")
 
     def get(self, request, *args, **kwargs):
-        # 获取所有人脸的信息
+        # 获取所有人脸的检测信息信息
         faceid = request.GET.get('faceid')
         streamid = request.GET.get('streamid')
         faceid = str(faceid)
         streamid = str(streamid)
         #如果只有streamid,没有faceid
         if (faceid =='None' or faceid == '') and (streamid != 'None' and streamid != ''):
+            print("---------Only-----streamid--------------")
             checks = CheckModel.objects.filter(streamid=streamid)
             personreids = PersonReidModel.objects.filter(streamid = streamid)
             checkids1 = checks.values('faceid').distinct()
             checkids2 = personreids.values('faceid').distinct()
             checkids = list(checkids1)+list(checkids2)
-            name = StreamModel.objects.get(pk=int(streamid)).streamname
-            streamtime = float(StreamModel.objects.get(pk=int(streamid)).streamtime)
+            ###这块修改得改下camerastream表加上streamname字段
+            # name = StreamModel.objects.get(pk=int(streamid)).streamname
+            name = CameraStreamModel.objects.get(pk=int(streamid)).startTime
+            # streamtime = float(StreamModel.objects.get(pk=int(streamid)).streamtime)
+            streamtime = float(CameraStreamModel.objects.get(pk=int(streamid)).streamTime)
             ret = []
             i = 0
             faceids = []
@@ -82,7 +92,7 @@ class Check(APIView):
                                 msg='success')
         #faceid和streamid都没有
         elif (faceid =='None' or faceid == '') and (streamid == 'None' or streamid == ''):
-            print("here")
+            print("no faceid no streamid")
             lists = []
             checks = CheckModel.objects.values('faceid', 'streamid', 'url').distinct()
             #checks = list(checks)
@@ -98,8 +108,12 @@ class Check(APIView):
                     continue
                 faceids.add(faceid)
                 rets = item
-                stream = StreamModel.objects.get(pk=streamid)
-                item['streamname'] = stream.streamlocation + '-' + stream.streamname
+                #stream = StreamModel.objects.get(pk=streamid)
+                stream = CameraStreamModel.objects.get(pk=int(streamid))
+                # item['streamname'] = stream.streamlocation + '-' + stream.streamname
+                ###暂时还没有streamName字段
+                # camera =CameraModel.objects.get(pk = int(stream.cameraId))
+                item['streamname'] = stream.cameraId.cameraLocation + '-' + stream.cameraId.cameraName
                 print(int(faceid))
                 if int(faceid) < 1000:
                     username = FaceModel.objects.get(pk=faceid).username
@@ -122,7 +136,7 @@ class Check(APIView):
             return JsonResponse(data={'list': lists, 'count': len(checks), 'imgList':imgs}, code='999999', msg='success')
         # 获取某一个具体人脸的信息，只有faceid，没有streamid
         elif ((faceid != 'None' and faceid != '') and (streamid == 'None' or streamid == '')):
-            print("只有faceid")
+            print("Only faceid")
             print(faceid)
             checks = CheckModel.objects.filter(faceid=faceid).values('faceid','streamid','time','url').distinct()
             personreids =PersonReidModel.objects.filter(faceid = faceid).values("faceid","streamid","time",'url').distinct()
@@ -144,16 +158,23 @@ class Check(APIView):
                     match['facename'] = face.username
                 else:
                     match['facename'] = "陌生人"+faceid
-                stream = StreamModel.objects.get(pk=int(match['streamid']))
-                match['streamname'] = stream.streamlocation + '-' + stream.streamname
+                # stream = StreamModel.objects.get(pk=int(match['streamid']))
+                stream = CameraStreamModel.objects.get(pk=int(match['streamid']))
+                ###暂时还没有streamName字段
+                # match['streamname'] = stream.streamlocation + '-' + stream.streamname
+                camera = stream.cameraId
+                match['streamname'] = camera.cameraLocation + '-' + camera.cameraName
                 time = match['time']
                 if time in times:
                     continue
+                # camera = CameraModel.objects.get(pk=int(stream.cameraId))
                 if not times:
-                    front_location = [float(stream.streamlon),float(stream.streamlat)]
+                    # front_location = [float(stream.streamlon),float(stream.streamlat)]
+                    front_location = [float(camera.cameraLon), float(camera.cameraLat)]
                     match_location = front_location
                 else:
-                    sencond_location = [float(stream.streamlon),float(stream.streamlat)]
+                    # sencond_location = [float(stream.streamlon),float(stream.streamlat)]
+                    sencond_location = [float(camera.cameraLon), float(camera.cameraLat)]
                     match_location = getmovelocation(front_location,sencond_location)
                     front_location = sencond_location
                 times.append(time)
@@ -187,12 +208,18 @@ class CheckLocations(APIView):
             centerlon = 0
             centerlat = 0
             for check in checks:
-                ret1 = StreamModel.objects.get(pk=check['streamid'])
+                # ret1 = StreamModel.objects.get(pk=check['streamid'])
+                stream= CameraStreamModel.objects.get(pk =int(check['streamid']))
+                ret1 = CameraModel.objects.get(pk=int(stream.cameraId))
                 ret2 = []
-                centerlon += float(ret1.streamlon)
-                centerlat += float(ret1.streamlat)
-                ret2.append(ret1.streamlon)
-                ret2.append(ret1.streamlat)
+                # centerlon += float(ret1.streamlon)
+                # centerlat += float(ret1.streamlat)
+                # ret2.append(ret1.streamlon)
+                # ret2.append(ret1.streamlat)
+                centerlon += float(ret1.streamLon)
+                centerlat += float(ret1.streamLat)
+                ret2.append(ret1.streamLon)
+                ret2.append(ret1.streamLat)
                 ret.append(ret2)
                 i+= 1
             newlist['location'] = ret
@@ -272,19 +299,25 @@ class CheckTrack(APIView):
             # print(streamids)
             locations = []
             for i,value in enumerate(streamids):
-                location = StreamModel.objects.filter(id=value['streamid']).values('streamlat','streamlon')[0]
+                # location = StreamModel.objects.filter(id=value['streamid']).values('streamlat','streamlon')[0]
+                stream = CameraStreamModel.objects.get(pk=int(value['streamid']))
+                location = stream.cameraId
                 if i>0:
-                    if a == [float(location['streamlon']), float(location['streamlat'])]:
+                    # if a == [float(location['streamlon']), float(location['streamlat'])]:
+                    if a == [float(location.cameraLon), float(location.cameraLat)]:
                         continue
-                    b =getmovelocation(a,[float(location['streamlon']),float(location['streamlat'])])
+                    # b =getmovelocation(a,[float(location['streamlon']),float(location['streamlat'])])
+                    b = getmovelocation(a, [float(location.cameraLon), float(location.cameraLat)])
                     #[locations[0][0],locations[0][1],location['streamlon'],location['streamlat']]
                     locations.append(b)
                     #locationlist.append(locations)
                     #locations = []
                 else:
-                    a = [float(location['streamlon']), float(location['streamlat'])]
+                    # a = [float(location['streamlon']), float(location['streamlat'])]
+                    a = [float(location.cameraLon), float(location.cameraLat)]
                     locations.append(a)
-                a = [float(location['streamlon']), float(location['streamlat'])]
+                # a = [float(location['streamlon']), float(location['streamlat'])]
+                a = [float(location.cameraLon), float(location.cameraLat)]
 
             if cols:
                 col = random.choice(cols)

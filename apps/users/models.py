@@ -174,6 +174,7 @@ class CameraStream(models.Model):
     streamStatus = models.CharField(max_length=256, null=True, blank=True, verbose_name="流status")
     startTime = models.DateTimeField()
     cameraId = models.ForeignKey('Camera', on_delete=models.CASCADE)
+    label = models.CharField(max_length=24, null=True, blank=True, verbose_name="时间")
 
 
     class Meta:
