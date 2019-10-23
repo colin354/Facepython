@@ -36,10 +36,13 @@ AUTH_PROFILE_MODEL = 'users.UserProfile'
 #FACE_IMG_CHECK_ROOT_URL = 'http://10.2.151.139:8888'
 #FACE_IMG_ROOT_URL = "http://10.2.151.139:8888/media/"
 # Application definition
-FACE_IMG_CHECK_ROOT_URL = 'http://10.2.155.139:8888'
-FACE_IMG_ROOT_URL = "http://10.2.155.139:8888/media/"
+##FACE_IMG_CHECK_ROOT_URL = 'http://10.2.155.139:8888'
+##FACE_IMG_ROOT_URL = "http://10.2.155.139:8888/media/"
+FACE_IMG_CHECK_ROOT_URL = 'http://172.16.3.101:8888'
+FACE_IMG_ROOT_URL = "http://172.16.3.101:8888/media/"
 CAMERA_RECORD_BASE_URL = '/opt/h5ss/www/mediastore/record/'
-RECORD_ROOT_URL = 'http://10.2.155.139:8888/record_media/'
+RECORD_ROOT_URL = 'http://172.16.3.101:8888/record_media/'
+##RECORD_ROOT_URL = 'http://10.2.155.139:8888/record_media/'
 # Application definition
 INSTALLED_APPS = [
     'channels',
@@ -103,9 +106,9 @@ ASGI_APPLICATION = 'Facepython.routing.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'vue_face',
+        'NAME': 'vue_face929',
         'USER': 'root',
-        'PASSWORD': 'root',
+        'PASSWORD': '123456',
         'HOST': '127.0.0.1',
         'PORT': '3306',
         'OPTIONS': { 'init_command': 'SET default_storage_engine=INNODB; SET sql_mode= STRICT_TRANS_TABLES; ' }

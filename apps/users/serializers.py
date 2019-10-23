@@ -83,7 +83,7 @@ class CameraStreamSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = CameraStream
-        fields = ('id','cameraId','streamUrl','streamTime','streamFps','streamStatus','startTime')
+        fields = ('id','cameraId','streamUrl','streamTime','streamFps','streamStatus','startTime','label')
 
 
 # class FaceRecordSerializer(serializers.ModelSerializer):

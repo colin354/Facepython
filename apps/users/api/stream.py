@@ -1,11 +1,12 @@
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from users.common.api_response import JsonResponse
-from apps.users.models import Stream , Check , PersonReid
+from apps.users.models import Stream , Check , PersonReid,Camera,CameraStream
 from apps.users.serializers import StreamSerializer
 from rest_framework import serializers
 from apps.users.utility import TokenVerify
 import cv2
+import datetime
 
 class StreamCheck(APIView):
     def post(self, request, *args, **kwargs):
@@ -84,41 +85,45 @@ class StreamView(APIView):
         # print("222222222222222222222222222")
         #params里带map_location摄像头位置预览的GET请求获取所谓视频信息用于做点标记
         if(request.GET.get('map_location') == 'GETLOCATION'):
-            streams = Stream.objects.all()
-            serializer = StreamSerializer(streams, many=True)
+            # streams = Stream.objects.all()
+            # serializer = StreamSerializer(streams, many=True)
             streamlocations = Stream.objects.all().values('streamlocation').distinct()
+            cameralocations = Camera.objects.all().values('cameraLocation').distinct()
             newlist = []
-            for streamlocation in streamlocations:
+            for cameralocation in cameralocations:
                 ret1 = {}
-                ret1['label']=streamlocation['streamlocation']
+                ret1['label']=cameralocation['cameraLocation']
                 ret1['streamlng'] = []
-                streamnames = Stream.objects.filter(streamlocation=streamlocation['streamlocation']).values('streamname','id','streamlon','streamlat','streamurl')
+                # streamnames = Stream.objects.filter(streamlocation=streamlocation['streamlocation']).values('streamname','id','streamlon','streamlat','streamurl')
+                cameranames = Camera.objects.filter(cameraLocation=cameralocation['cameraLocation']).values(
+                    'cameraName', 'id', 'cameraLon', 'cameraLat', 'c_token')
                 ret2 = []
-                for streamname in streamnames:
+                for cameraname in cameranames:
                     ret3 = {}
-                    ret3['id'] = streamname['id']
-                    ret3['label'] = streamname['streamname']
-                    ret3['streamUrl'] = streamname['streamurl']
+                    ret3['id'] = cameraname['id']
+                    ret3['label'] = cameraname['cameraName']
+                    # ret3['streamUrl'] = streamname['streamurl']
                     ret3['streamlng'] = []
-                    ret3['streamlng'].append([streamname['streamlon'],streamname['streamlat']])
-                    ret1['streamlng'].append([streamname['streamlon'], streamname['streamlat']])
+                    ret3['streamlng'].append([cameraname['cameraLon'],cameraname['cameraLat']])
+                    ret1['streamlng'].append([cameraname['cameraLon'], cameraname['cameraLat']])
                     ret2.append(ret3)
                 ret1['children'] = ret2
                 newlist.append(ret1)
-            return JsonResponse(data={'list': serializer.data, 'count': len(serializer.data) , 'streamList':newlist}, code='999999',
+            return JsonResponse(data={'streamList':newlist}, code='999999',
                                     msg='success')
         # params里带map_location摄像头位置余力的GET请求用于做树形结构
         if (request.GET.get('map_location') == 'GETMAP'):
-            streamlngs = Stream.objects.all().values('streamlon','streamlat')
+            # streamlngs = Stream.objects.all().values('streamlon','streamlat')
+            cameralngs = Camera.objects.all().values('cameraLon','cameraLat')
             newlist = []
             ret = []
             lon = 0
             lat = 0
             ret = []
-            for streamlng in streamlngs:
-                newlist.append([streamlng['streamlon'],streamlng['streamlat']])
-                lon = lon+float(streamlng['streamlon'])
-                lat = lat + float(streamlng['streamlat'])
+            for cameralng in cameralngs:
+                newlist.append([cameralng['cameraLon'],cameralng['cameraLat']])
+                lon = lon+float(cameralng['cameraLon'])
+                lat = lat + float(cameralng['cameraLat'])
             i = len(newlist)
             if i!=0:
                 ret = [lon/i,lat/i]
@@ -158,6 +163,50 @@ class StreamView(APIView):
             return JsonResponse(data=serializer.data, code='999999', msg='success')
 
 
+
+class  VideoStruct(APIView):
+    @TokenVerify
+    def get(self, request, *args, **kwargs):
+        cameralocations = Camera.objects.all().values('cameraLocation').distinct()
+        newlist = []
+        for cameralocation in cameralocations:
+            ret1 = {}
+            ret1['label'] = cameralocation['cameraLocation']
+            # ret1['streamlng'] = []
+            # streamnames = Stream.objects.filter(streamlocation=streamlocation['streamlocation']).values('streamname','id','streamlon','streamlat','streamurl')
+            cameranames = Camera.objects.filter(cameraLocation=cameralocation['cameraLocation']).values(
+                'cameraName','id')
+            ret2 = []
+            for cameraname in cameranames:
+                ret3 = {}
+                # ret3['id'] = cameraname['id']
+                ret3['label'] = cameraname['cameraName']
+                camerastreams = CameraStream.objects.filter(cameraId_id=int(cameraname['id'])).values('startTime','streamUrl','id')
+                #ret3['children'] = list(camerastreams)
+                for camerastream in camerastreams:
+                    ret5 = []
+                    ret4 = {}
+                    match_num  = len(Check.objects.filter(streamid=str(camerastream['id'])))+len(PersonReid.objects.filter(streamid=str(camerastream['id'])))
+                    print(camerastream['startTime'])
+                    print(type(camerastream['startTime']))
+                    ret4['label'] = camerastream['startTime'].strftime("%Y-%m-%d %H:%M:%S") +"("+"匹配次数"+str(match_num)+")"
+                    ret4['id'] = camerastream['id']
+                    ret4['streamUrl'] = camerastream['streamUrl']
+                    ret5.append(ret4)
+                    ret3['children'] = ret5
+                # ret3['streamUrl'] = streamname['streamurl']
+                # ret3['streamlng'] = []
+                # ret3['streamlng'].append([cameraname['cameraLon'], cameraname['cameraLat']])
+                # ret1['streamlng'].append([cameraname['cameraLon'], cameraname['cameraLat']])
+                ret2.append(ret3)
+            ret1['children'] = ret2
+            newlist.append(ret1)
+        print(newlist)
+        return JsonResponse(data={'streamList': newlist}, code='999999',
+                            msg='success')
+
+
 stream_list = StreamView.as_view()
 stream_add = StreamAddorupload.as_view()
 stream_check = StreamCheck.as_view()
+video_structred = VideoStruct.as_view()
