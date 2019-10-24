@@ -154,13 +154,13 @@ class Camera(models.Model):
     """
         本地摄像头库
     """
-    cameraName     = models.CharField(max_length=50, verbose_name="摄像头名称")
-    cameraLocation = models.CharField(max_length=50, verbose_name="摄像头位置")
+    cameraName     = models.CharField(max_length=256, verbose_name="摄像头名称")
+    cameraLocation = models.CharField(max_length=256, verbose_name="摄像头位置")
     cameraLat      = models.CharField(max_length=24, verbose_name="纬度")
     cameraLon      = models.CharField(max_length=24, verbose_name="经度")
     c_ip           = models.CharField(max_length=24, null = True ,verbose_name="摄像头ip地址")
-    c_username     = models.CharField(max_length=24, null = True ,verbose_name="摄像头用户名")
-    c_password     = models.CharField(max_length=24, null = True ,verbose_name="摄像头密码")
+    c_username     = models.CharField(max_length=100, null = True ,verbose_name="摄像头用户名")
+    c_password     = models.CharField(max_length=100, null = True ,verbose_name="摄像头密码")
     c_token        = models.CharField(max_length=24, null = True ,verbose_name="摄像头token")
 
     class Meta:
@@ -168,13 +168,13 @@ class Camera(models.Model):
         verbose_name_plural = verbose_name
 
 class CameraStream(models.Model):
-    streamUrl = models.URLField(verbose_name="视频地址", null=True)
+    streamUrl = models.URLField(verbose_name="视频地址", null=True, unique=True)
     streamTime = models.CharField(max_length=256, null=True, blank=True, verbose_name="流time")
     streamFps = models.CharField(max_length=256, null=True, blank=True, verbose_name="流fps")
     streamStatus = models.CharField(max_length=256, null=True, blank=True, verbose_name="流status")
-    startTime = models.DateTimeField()
+    startTime = models.CharField(max_length=256, null=True, blank=True, verbose_name="流time")
     cameraId = models.ForeignKey('Camera', on_delete=models.CASCADE)
-    label = models.CharField(max_length=24, null=True, blank=True, verbose_name="时间")
+    label = models.CharField(max_length=256, null=True, blank=True, verbose_name="时间")
 
 
     class Meta:

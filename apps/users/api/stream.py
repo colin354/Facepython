@@ -102,6 +102,7 @@ class StreamView(APIView):
                     ret3 = {}
                     ret3['id'] = cameraname['id']
                     ret3['label'] = cameraname['cameraName']
+                    ret3['token'] = cameraname['c_token']
                     # ret3['streamUrl'] = streamname['streamurl']
                     ret3['streamlng'] = []
                     ret3['streamlng'].append([cameraname['cameraLon'],cameraname['cameraLat']])
@@ -183,17 +184,19 @@ class  VideoStruct(APIView):
                 ret3['label'] = cameraname['cameraName']
                 camerastreams = CameraStream.objects.filter(cameraId_id=int(cameraname['id'])).values('startTime','streamUrl','id')
                 #ret3['children'] = list(camerastreams)
+                ret3['children'] = []
                 for camerastream in camerastreams:
                     ret5 = []
                     ret4 = {}
                     match_num  = len(Check.objects.filter(streamid=str(camerastream['id'])))+len(PersonReid.objects.filter(streamid=str(camerastream['id'])))
                     print(camerastream['startTime'])
                     print(type(camerastream['startTime']))
-                    ret4['label'] = camerastream['startTime'].strftime("%Y-%m-%d %H:%M:%S") +"("+"匹配次数"+str(match_num)+")"
+                    ret4['label'] = camerastream['startTime'] +"("+"匹配次数"+str(match_num)+")"
                     ret4['id'] = camerastream['id']
                     ret4['streamUrl'] = camerastream['streamUrl']
-                    ret5.append(ret4)
-                    ret3['children'] = ret5
+                    ret3['children'].append(ret4)
+                    #ret5.append(ret4)
+                    #ret3['children'] = ret5
                 # ret3['streamUrl'] = streamname['streamurl']
                 # ret3['streamlng'] = []
                 # ret3['streamlng'].append([cameraname['cameraLon'], cameraname['cameraLat']])

@@ -164,6 +164,51 @@ class CameraRecord(APIView):
         print(request.data)
         return JsonResponse(data={}, code="999999", msg="成功")
 
+class CameraRecordForCS(APIView):
+    def post(self,request,*args,**kwargs):
+        print('colin: new')    
+        print(request.data)
+        print(request.data['cameraId'])
+        cameraId = request.data['cameraId']
+        camera = Camera.objects.get(pk = cameraId)
+        serializer = CameraSerializer(camera)
+        print(serializer.data)
+        print(serializer.data['c_token'])
+        filepath = settings.CAMERA_RECORD_BASE_URL + serializer.data['c_token']
+        file_list = getfilelist(filepath)
+        print((file_list[0]))
+        stream_data = {}
+        stream_data['cameraId'] = cameraId
+        for i in range(0, len(file_list)):
+            print('------0-000-----')
+            stream_data['startTime'] = file_list[i].split(serializer.data['c_token'])[1]
+            stream_data['label'] = serializer.data['cameraName'] + serializer.data['cameraLocation']
+            stream_data['streamUrl'] = settings.RECORD_ROOT_URL + file_list[i].split('record/')[1]
+            stream_data['flag'] = '0'
+            stream_data['streamStatus'] = '0'
+            cap = cv2.VideoCapture(file_list[i])
+            if cap.isOpened():  # 当成功打开视频时cap.isOpened()返回True,否则返回False
+                rate = cap.get(5)  # 帧速率
+                frame_number = cap.get(7)  # 视频文件的帧数
+                seconds = frame_number / rate
+                rate = ("%.1f" % rate)
+                seconds = ("%.1f" % seconds)
+                streamfps_value = str(rate)
+                streamtime_value = str(seconds)
+            stream_data['streamFps'] = streamfps_value
+            stream_data['streamTime'] = streamtime_value
+            serializers = CameraStreamSerializer(data = stream_data)
+            if serializers.is_valid():
+                stream = serializers.save()
+            print('dddddataeddd')
+            print(serializers.data)
+        return JsonResponse(data=serializers.data, code="999999", msg="成功")
+    def get(self,request,*args,**kwargs):
+        print('colin: new')    
+        print(request.data)
+        return JsonResponse(data={}, code="999999", msg="成功")
+
+
 #遍历文件及子文件的所有文件
 def getfilelist(filepath):
     filelist = os.listdir(filepath)
@@ -180,3 +225,4 @@ def getfilelist(filepath):
 cameras = CameraView.as_view()
 camera_stream = CameraStream.as_view()
 camera_record = CameraRecord.as_view()
+camera_record_for_cs = CameraRecordForCS.as_view()
