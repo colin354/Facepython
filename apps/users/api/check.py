@@ -109,7 +109,10 @@ class Check(APIView):
                 faceids.add(faceid)
                 rets = item
                 #stream = StreamModel.objects.get(pk=streamid)
-                stream = CameraStreamModel.objects.get(pk=int(streamid))
+                try:
+                    stream = CameraStreamModel.objects.get(pk=int(streamid))
+                except:
+                    continue
                 # item['streamname'] = stream.streamlocation + '-' + stream.streamname
                 ###暂时还没有streamName字段
                 # camera =CameraModel.objects.get(pk = int(stream.cameraId))
