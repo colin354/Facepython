@@ -154,6 +154,10 @@ class Camera(models.Model):
     """
         本地摄像头库
     """
+    DETECT_CHOICE = (
+        (0, 'close'),
+        (1, 'open'),
+    )
     cameraName     = models.CharField(max_length=256, verbose_name="摄像头名称")
     cameraLocation = models.CharField(max_length=256, verbose_name="摄像头位置")
     cameraLat      = models.CharField(max_length=24, verbose_name="纬度")
@@ -162,6 +166,7 @@ class Camera(models.Model):
     c_username     = models.CharField(max_length=100, null = True ,verbose_name="摄像头用户名")
     c_password     = models.CharField(max_length=100, null = True ,verbose_name="摄像头密码")
     c_token        = models.CharField(max_length=24, null = True ,verbose_name="摄像头token")
+    c_detectStatus = models.IntegerField(choices=DETECT_CHOICE, default=0 ,verbose_name="摄像头检测状态")
 
     class Meta:
         verbose_name = "摄像头信息"

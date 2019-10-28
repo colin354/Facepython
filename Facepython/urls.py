@@ -43,6 +43,8 @@ urlpatterns = [
     url(r'^sys/facerecord',facerecord.face_record),
     url(r'^sys/stranger',face.strangers),
     url(r'^sys/camerastream', camera.camera_stream),
+    url(r'^sys/camerareal', camera.camera_real),
+    url(r'^sys/cameraws', camera.camera_ws),
     url(r'^sys/camerarecord', camera.camera_record_for_cs),
     url(r'^sys/cameras',camera.cameras),
     url(r'^sys/check',check.check_track),

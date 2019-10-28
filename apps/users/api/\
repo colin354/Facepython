@@ -7,13 +7,9 @@ from rest_framework import serializers
 from apps.users.utility import TokenVerify
 from apps.users.models import CameraStream as CameraStreamModel
 from django.conf import settings
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
-import os,json
+import os
 import cv2
 import datetime
-import paramiko
-import configparser
 
 class CameraView(APIView):
 
@@ -208,57 +204,19 @@ class CameraRecordForCS(APIView):
         print(request.data)
         return JsonResponse(data={}, code="999999", msg="成功")
 
-class CameraWS(APIView):
-    def post(self,request,*args,**kwargs):
-        print(request.data)
-        channel_layer = get_channel_layer()
-        result_all = json.dumps(request.data)
-        c_token = 'token112'
-        async_to_sync(channel_layer.group_send)(c_token, {"type": "user.message", 'text': result_all})
-        print('memememmeeeeeeee')
-        return JsonResponse(data={}, code="999999", msg="成功")
-
 class CameraReal(APIView):
     def post(self,request,*args,**kwargs):
         print('hello exec detect--------------')        
         print(request.data)        
         print(request.data['c_id'])        
-        print(request.data['c_token'])        
-        conf_file = settings.CONF_FILE
-        config = configparser.ConfigParser()
-        config.read(conf_file,encoding="utf-8")
         cameraId = request.data['c_id']
-        cameraToken = request.data['c_token']
-        print(cameraToken)
-        #camera = Camera.objects.get(pk = cameraId)
-        #serializer = CameraSerializer(camera)
-        #config["camera_detect_token"] = serializer.data['c_token']
-        config["camera_detect_token"] = request.data
-        config.write(open(conf_file,mode='w'))
-        return JsonResponse(data={'e':''}, code="999999", msg="成功")
+        camera = Camera.objects.get(pk = cameraId)
+        serializer = CameraSerializer(camera)
+        print(serializer)
+        return JsonResponse(data={}, code="999999", msg="成功")
 
-def rtsp_result(c_token,hostname,port,username,password,private,tail):
+def rtsp_result(token,ip):
     channel_layer = get_channel_layer()
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    if password:
-        ssh.connect(hostname=hostname, port=port, username=username,password=password)
-    else:
-        pkey = paramiko.RSAKey.from_private_key_file(private)
-        ssh.connect(hostname=hostname, port=port, username=username, pkey=pkey)
-    cmd = "sh " + tail
-    print(cmd)
-    stdin, stdout, stderr = ssh.exec_command(cmd)
-    print('99990000999999')
-    for line in iter(stdout.readline, ""):
-        result = {"status": 0, 'data': line}
-        print(result)
-        result_all = json.dumps(result)
-        print("hello nihao aaaaa")
-        async_to_sync(channel_layer.group_send)(c_token, {"type": "user.message", 'text': result_all})
-    
-    result_all = 'mmmdddd!fu'
-    async_to_sync(channel_layer.group_send)(c_token, {"type": "user.message", 'text': result_all})
 
 #遍历文件及子文件的所有文件
 def getfilelist(filepath):
@@ -275,7 +233,6 @@ def getfilelist(filepath):
 
 cameras = CameraView.as_view()
 camera_real = CameraReal.as_view()
-camera_ws = CameraWS.as_view()
 camera_stream = CameraStream.as_view()
 camera_record = CameraRecord.as_view()
 camera_record_for_cs = CameraRecordForCS.as_view()

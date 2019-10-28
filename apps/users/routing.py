@@ -2,5 +2,5 @@ from django.conf.urls import url
 from . import consumers
 
 websocket_urlpatterns = [
-    url('ws/chat/',consumers.ChatConsumer),
+    url(r'^ws/chat/(?P<c_token>[^/]+)/$',consumers.ChatConsumer),
 ]

@@ -1,20 +1,36 @@
+from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
+from channels.layers import get_channel_layer
 import json
+
+channel_layer = get_channel_layer()
 
 class ChatConsumer(WebsocketConsumer):
         def connect(self):
+                #创建channels group， 命名为：用户名，并使用channel_layer写入到redis
+                print('====create=====')
+                print(self.scope)
+                print(self.scope['url_route']['kwargs']['c_token'])
+                print(self.channel_layer)
+                self.c_token = self.scope['url_route']['kwargs']['c_token']
+                async_to_sync(self.channel_layer.group_add)(self.c_token, self.channel_name)
                 self.accept()
 
         def disconnect(self, close_code):
-                pass
+                print("ddddddis connect!!!!!")
+                print(self.scope)
+                self.c_token = self.scope['url_route']['kwargs']['c_token']
+                async_to_sync(self.channel_layer.group_discard)(self.c_token, self.channel_name)
+
 
         def receive(self, text_data):
-                text_data_json = json.loads(text_data)
-                message = text_data_json['message']
-                print(message)
-                print(self)
+                async_to_sync(self.channel_layer.group_send)(
+                    self.scope['url_route']['kwargs']['c_token'],
+                    {
+                        "type": "user.message",
+                        "text": text_data,
+                    },
+                )
 
-                self.send(text_data=json.dumps({
-                    'message': 'server: '+message,
-                    'command': '1'
-                }))
+        def user_message(self, event):
+                self.send(text_data=event["text"])
