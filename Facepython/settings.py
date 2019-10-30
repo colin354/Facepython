@@ -26,7 +26,7 @@ sys.path.insert(0,os.path.join(BASE_DIR,'extra_apps'))
 SECRET_KEY = '6+2ro69sh_^2=(g@xlm@!=jc#j@fj!^&t=-rq0$kyf75_e8%zl'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 #ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.17.1.*', '192.17.1.150']
 #ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.1.14', '192.168.1.*']
@@ -38,8 +38,12 @@ AUTH_PROFILE_MODEL = 'users.UserProfile'
 # Application definition
 ##FACE_IMG_CHECK_ROOT_URL = 'http://10.2.155.139:8888'
 ##FACE_IMG_ROOT_URL = "http://10.2.155.139:8888/media/"
-FACE_IMG_CHECK_ROOT_URL = 'http://172.16.3.101:8888'
-FACE_IMG_ROOT_URL = "http://172.16.3.101:8888/media/"
+
+#FACE_IMG_CHECK_ROOT_URL = 'http://172.16.3.101:8888'
+#FACE_IMG_ROOT_URL = "http://172.16.3.101:8888/media/"
+
+FACE_IMG_CHECK_ROOT_URL = 'http://10.2.155.139:8888'
+FACE_IMG_ROOT_URL = "http://10.2.155.139:8888/media/"
 CAMERA_RECORD_BASE_URL = '/opt/h5ss/www/mediastore/record/'
 RECORD_ROOT_URL = 'http://10.2.155.139:8888/record_media/'
 CONF_FILE = '/home/face_detect/base.conf'

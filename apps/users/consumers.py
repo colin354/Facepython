@@ -12,7 +12,10 @@ class ChatConsumer(WebsocketConsumer):
                 print(self.scope)
                 print(self.scope['url_route']['kwargs']['c_token'])
                 print(self.channel_layer)
+                print(self.channel_name)
                 self.c_token = self.scope['url_route']['kwargs']['c_token']
+                #self.channel_name = self.c_token
+                print(self.channel_name)
                 async_to_sync(self.channel_layer.group_add)(self.c_token, self.channel_name)
                 self.accept()
 
@@ -20,10 +23,13 @@ class ChatConsumer(WebsocketConsumer):
                 print("ddddddis connect!!!!!")
                 print(self.scope)
                 self.c_token = self.scope['url_route']['kwargs']['c_token']
+                #self.channel_name = self.c_token
+                print(self.channel_name)
                 async_to_sync(self.channel_layer.group_discard)(self.c_token, self.channel_name)
 
 
         def receive(self, text_data):
+                print('****************')
                 async_to_sync(self.channel_layer.group_send)(
                     self.scope['url_route']['kwargs']['c_token'],
                     {

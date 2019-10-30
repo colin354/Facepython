@@ -1,11 +1,12 @@
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from users.common.api_response import JsonResponse
-from apps.users.models import Camera,CameraStream
-from apps.users.serializers import CameraSerializer,CameraStreamSerializer,StreamSerializer
+from apps.users.models import Camera,CameraStream,Face,FaceImg
+from apps.users.serializers import CameraSerializer,CameraStreamSerializer,StreamSerializer,CameraRealtimeSerializer
 from rest_framework import serializers
 from apps.users.utility import TokenVerify
 from apps.users.models import CameraStream as CameraStreamModel
+from apps.users.models import CameraRealtime as CameraRealtimeModel
 from django.conf import settings
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -121,7 +122,7 @@ class CameraStream(APIView):
 
 class CameraRecord(APIView):
     def post(self,request,*args,**kwargs):
-        print('colin: new')    
+        print('colin: new')
         print(request.data)
         print(request.data['cameraId'])
         cameraId = request.data['cameraId']
@@ -160,13 +161,13 @@ class CameraRecord(APIView):
 
         return JsonResponse(data=serializer.data, code="999999", msg="成功")
     def get(self,request,*args,**kwargs):
-        print('colin: new')    
+        print('colin: new')
         print(request.data)
         return JsonResponse(data={}, code="999999", msg="成功")
 
 class CameraRecordForCS(APIView):
     def post(self,request,*args,**kwargs):
-        print('colin: new')    
+        print('colin: new')
         print(request.data)
         print(request.data['cameraId'])
         cameraId = request.data['cameraId']
@@ -204,26 +205,48 @@ class CameraRecordForCS(APIView):
             print(serializers.data)
         return JsonResponse(data=serializers.data, code="999999", msg="成功")
     def get(self,request,*args,**kwargs):
-        print('colin: new')    
+        print('colin: new')
         print(request.data)
         return JsonResponse(data={}, code="999999", msg="成功")
 
 class CameraWS(APIView):
     def post(self,request,*args,**kwargs):
         print(request.data)
+        print("1111111111111111111111")
+        buf = request.data.copy()
+        #buf['cameraid'] = str(Camera.objects.filter(c_ip= buf['cameraip']).values('id')[0]['id'])
+        buf['imgurl'] = settings.FACE_IMG_CHECK_ROOT_URL+buf['imgurl']
+        print("1111111111111111111111")
+        print(buf)
+        serializer = CameraRealtimeSerializer(data=buf)
+        if serializer.is_valid():
+            serializer.save()
         channel_layer = get_channel_layer()
-        result_all = json.dumps(request.data)
-        c_token = 'token112'
-        async_to_sync(channel_layer.group_send)(c_token, {"type": "user.message", 'text': result_all})
+        #c_token = 'token112'
+        c_token = Camera.objects.get(pk = int(buf['cameraid'])).c_token
+        conf_file = settings.CONF_FILE
+        config = configparser.ConfigParser()
+        print('--------11111----123432------')
+        print(c_token)
+        config.read(conf_file,encoding="utf-8")
+        print('--------11111----------')
+        print(config['camera_detect_token']['c_token'])
+        if c_token == config['camera_detect_token']['c_token']:
+            buf['faceurl'] = FaceImg.objects.filter(userid_id=int(buf['faceid'])).values('imgurl')[0]['imgurl']
+            buf['count'] = len(CameraRealtimeModel.objects.filter(cameraid=str(buf['cameraid'])).values('faceid').distinct())
+            result_all = json.dumps(buf)
+            async_to_sync(channel_layer.group_send)(c_token, {"type": "user.message", 'text': result_all})
+            #async_to_sync(channel_layer.send)(c_token, {"type": "user.message", 'text': result_all})
+            print('--------2222222----------')
         print('memememmeeeeeeee')
         return JsonResponse(data={}, code="999999", msg="成功")
 
 class CameraReal(APIView):
     def post(self,request,*args,**kwargs):
-        print('hello exec detect--------------')        
-        print(request.data)        
-        print(request.data['c_id'])        
-        print(request.data['c_token'])        
+        print('hello exec detect--------------')
+        print(request.data)
+        print(request.data['c_id'])
+        print(request.data['c_token'])
         conf_file = settings.CONF_FILE
         config = configparser.ConfigParser()
         config.read(conf_file,encoding="utf-8")
@@ -256,7 +279,7 @@ def rtsp_result(c_token,hostname,port,username,password,private,tail):
         result_all = json.dumps(result)
         print("hello nihao aaaaa")
         async_to_sync(channel_layer.group_send)(c_token, {"type": "user.message", 'text': result_all})
-    
+
     result_all = 'mmmdddd!fu'
     async_to_sync(channel_layer.group_send)(c_token, {"type": "user.message", 'text': result_all})
 

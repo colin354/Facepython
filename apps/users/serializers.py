@@ -5,7 +5,7 @@ from apps.users.models import Face
 from apps.users.models import FaceImg
 from apps.users.models import Check
 from apps.users.models import Stream
-from apps.users.models import Camera,Stranger,CameraStream,PersonReid,PersonDetect,MatchUp
+from apps.users.models import Camera,Stranger,CameraStream,PersonReid,PersonDetect,MatchUp,CameraRealtime
 
 class TokenSerializer(serializers.ModelSerializer):
     """
@@ -128,3 +128,8 @@ class MatchUpSerializer(serializers.ModelSerializer):
     class Meta:
         model = MatchUp
         fields = ("person_id","faceid",'c_threshold','dec_img_url')
+
+class CameraRealtimeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CameraRealtime
+        fields = ("cameraid","c_x","c_y","c_w","c_h","c_threshold","imgurl","faceid")

@@ -273,3 +273,19 @@ class MatchUp(models.Model):
     class Meta:
         verbose_name="对应关系表"
         verbose_name_plural=verbose_name
+
+class CameraRealtime(models.Model):
+    cameraid  = models.CharField(max_length=10, verbose_name='摄像头ID')
+    c_x = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框x")
+    c_y = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框y")
+    c_w = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框w")
+    c_h = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框h")
+    c_threshold = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测阈值")
+    imgurl = models.CharField(max_length=100, null=True, verbose_name="图片url")
+    faceid = models.CharField(max_length=10, verbose_name='人员ID')
+    #c_token = models.CharField(max_length=24, null=True, verbose_name="摄像头token")
+    #timestap = models.CharField(max_length=100, verbose_name="时间戳")
+
+    class Meta:
+        verbose_name="实时监控数据"
+        verbose_name_plural = verbose_name
