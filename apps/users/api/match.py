@@ -78,7 +78,7 @@ class matchUp(APIView):
 def py_cpu_nms(dets):
     """Pure Python NMS baseline."""
 
-    thresh = 0.0001
+    thresh = 0.9
     x1 = dets[:, 0]  # xmin
     y1 = dets[:, 1]  # ymin
     x2 = dets[:, 2]  # xmax

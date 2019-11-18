@@ -8,6 +8,7 @@ from apps.users.models import Stream as StreamModel
 from apps.users.models import Face as FaceModel
 from apps.users.models import Stranger as StrangerModel
 from apps.users.models import PersonReid as PersonReidModel
+from apps.users.models import MatchUp as MatchUpModel
 from collections import OrderedDict
 from itertools import chain
 
@@ -19,16 +20,20 @@ from apps.users.models import Camera as CameraModel
 class Check(APIView):
 
     def post(self, request, *args, **kwargs):
+        print("check post now!")
         tempUrl = request.data.get('url')
         #streamid = StreamModel.objects.filter(streamurl=settings.FACE_IMG_CHECK_ROOT_URL+tempUrl).values("id","streamfps")[0]
-        streamid = CameraStreamModel.objects.filter(streamUrl=settings.FACE_IMG_CHECK_ROOT_URL+tempUrl).values("id","streamFps")[0]
+        #streamid = CameraStreamModel.objects.filter(streamUrl=settings.FACE_IMG_CHECK_ROOT_URL+tempUrl).values("id","streamFps")[0]
+        streamid = CameraStreamModel.objects.filter(streamUrl=settings.FACE_IMG_CHECK_ROOT_URL+ tempUrl).values("id","streamFps")[0]
         buf = request.data.copy()
         buf['streamid'] = streamid['id']
         ######现在是相对时间，绝对时间的话得加上当前视频流的开始时间
         # timebuf = float(buf['timestap'])/float(streamid['streamfps'])
         timebuf = float(buf['timestap']) / float(streamid['streamFps'])
         buf['time'] = str(round(timebuf,2))
+        print(buf)
         serializer = CheckSerializer(data=buf)
+        print(serializer)
         if serializer.is_valid():
             #这里可以解析post上传数据，再存储，目前做个简单的
             serializer.save()
@@ -79,6 +84,7 @@ class Check(APIView):
                 newlist['facetime'] =  newlist1['facetime']
                 newlist['marks']  = newlist1['marks']
                 newlist['url'] = newlist1['url']
+                newlist['person_url'] = newlist1['person_url']
                 ret.append(newlist)
                 print(i)
             # print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
@@ -86,8 +92,9 @@ class Check(APIView):
             newlist['streamname'] = name
             newlist['streamtime'] = streamtime
             newlist['facematch'] = ret
-            serializer1 =getmarkers(checks)
-            serializer2 = getmarkers(personreids)
+            serializer1 =getmarkers(list(checks),list(personreids))
+            #serializer2 = getmarkers(personreids)
+            serializer2 = {}
             return JsonResponse(data={'list': serializer1, 'count': len(serializer1) , 'info':newlist,'list_reid':serializer2}, code='999999',
                                 msg='success')
         #faceid和streamid都没有
@@ -126,16 +133,18 @@ class Check(APIView):
                     rets['facename'] = username
                 else:
                     username = "陌生人"+'-'+faceid
-                    strangers = StrangerModel.objects.filter(faceid = faceid).values('faceid','imgurl')
-                    img = {"user_id":strangers[0]['faceid'],"imgurl":settings.FACE_IMG_CHECK_ROOT_URL+strangers[0]['imgurl']}
+                    try:
+                        strangers = MatchUpModel.objects.get(faceid=str(faceid))
+                        img = {"user_id":strangers.faceid,"imgurl":settings.FACE_IMG_CHECK_ROOT_URL+strangers.dec_img_url}
+                    except:
+                        strangers = StrangerModel.objects.filter(faceid = faceid).values('faceid','imgurl')
+                        img = {"user_id":strangers[0]['faceid'],"imgurl":settings.FACE_IMG_CHECK_ROOT_URL+strangers[0]['imgurl']}
                     img['username'] = username
                     item['facename'] = username
                 imgs.append(img)
                 lists.append(rets)
                 # if ind == 1:break
 
-            print(list)
-            print(imgs)
             return JsonResponse(data={'list': lists, 'count': len(checks), 'imgList':imgs}, code='999999', msg='success')
         # 获取某一个具体人脸的信息，只有faceid，没有streamid
         elif ((faceid != 'None' and faceid != '') and (streamid == 'None' or streamid == '')):
@@ -147,45 +156,58 @@ class Check(APIView):
             if int(faceid)< 1000:#集合陌生人
                 imgs = FaceImgModel.objects.filter(userid_id=faceid).values('userid_id', 'imgurl')
             else:
-                img = {'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+CheckModel.objects.filter(faceid = faceid).values('imgurl')[0]['imgurl'],'userid_id':faceid}
+                try:
+                    img = {'imgurl': settings.FACE_IMG_CHECK_ROOT_URL +MatchUpModel.objects.get(faceid=str(faceid)).dec_img_url,'userid_id': faceid}
+                except:
+                    img = {'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+CheckModel.objects.filter(faceid = faceid).values('imgurl')[0]['imgurl'],'userid_id':faceid}
                 imgs.append(img)
             matchs = list(checks)+list(personreids)
-            # print(matchs)
+            #根据time做排序（默认所有视频都是同一时间开始）
             matchs.sort(key=lambda k: (float(k.get('time'))), reverse=False)
             times = []
             locations = []
             front_location = []
+            streamids = []
+            cameraids = []
+            markers = []
+            rcv = []
             for match in matchs:
+
                 if int(faceid)< 1000:
                     face = FaceModel.objects.get(pk=faceid)
                     match['facename'] = face.username
                 else:
                     match['facename'] = "陌生人"+faceid
-                # stream = StreamModel.objects.get(pk=int(match['streamid']))
                 stream = CameraStreamModel.objects.get(pk=int(match['streamid']))
-                ###暂时还没有streamName字段
-                # match['streamname'] = stream.streamlocation + '-' + stream.streamname
                 camera = stream.cameraId
                 match['streamname'] = camera.cameraLocation + '-' + camera.cameraName
                 time = match['time']
                 if time in times:
                     continue
-                # camera = CameraModel.objects.get(pk=int(stream.cameraId))
                 if not times:
-                    # front_location = [float(stream.streamlon),float(stream.streamlat)]
                     front_location = [float(camera.cameraLon), float(camera.cameraLat)]
                     match_location = front_location
                 else:
-                    # sencond_location = [float(stream.streamlon),float(stream.streamlat)]
                     sencond_location = [float(camera.cameraLon), float(camera.cameraLat)]
                     match_location = getmovelocation(front_location,sencond_location)
                     front_location = sencond_location
                 times.append(time)
                 locations.append(match_location)
+                if match['streamid'] in streamids:
+                    continue
+                streamids.append(match['streamid'])
+                rcv.append(match)
+                #封装标记点
+                if camera.id in cameraids:
+                    continue
+                cameraids.append(camera.id)
+                markers.append((camera.cameraLon,camera.cameraLat))
+
             imgs = list(imgs)
-            # print(matchs)
             print(locations)
-            return JsonResponse(data={'list': list(matchs), 'count': len(matchs), 'imgList':imgs,'location':list(locations)}, code='999999', msg='success')
+            print(rcv)
+
+            return JsonResponse(data={'list': list(rcv), 'count': len(matchs), 'imgList':imgs,'location':list(locations),'Markers':markers}, code='999999', msg='success')
         #faceid和streamid都有
         elif ((faceid != 'None' and faceid != '') and (streamid != 'None' and streamid != '')):
             checks = CheckModel.objects.filter(faceid=faceid, streamid=streamid).values('faceid', 'time', 'imgurl','c_threshold')
@@ -230,28 +252,56 @@ class CheckLocations(APIView):
             return JsonResponse(data=newlist, code="999999", msg="成功")
 
 #按流查询后端数据处理过程
-def getmarkers(data):
+def getmarkers(data,data1):
     res = []
-    for marker in data:
+    len1 =len(data)
+    data = data+data1
+    for i,marker in enumerate(data):
         newlist = {}
+        # if i < len1:
+        #     flag = "0"
+        # else:
+        #     flag = "1"
         for marker_data in res:
             if marker.time == marker_data['time']:
 
-                newlist = {'id':marker.faceid,'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl,'threshold':marker.c_threshold}
-                marker_data['imgList'].append(newlist)
+                newlist = {'id':marker.faceid,'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl,'threshold':marker.c_threshold,}
+                if i < len1:
+                    marker_data['imgList'].append(newlist)
+                else:
+                    marker_data['personList'].append(newlist)
+
                 break
         if newlist:
             print('same time')
         else:
-            res.append({'time': marker.time, 'imgList':[{'id':marker.faceid,'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl,'threshold':marker.c_threshold}],
-                            'width':"50%"})
+            if i < len1:
+                res.append({'time': marker.time, 'imgList':[{'id':marker.faceid,'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl,'threshold':marker.c_threshold}],'personList':[],'width':"50%"})
+            else:
+                res.append({'time': marker.time, 'personList': [
+                    {'id': marker.faceid, 'imgurl': settings.FACE_IMG_CHECK_ROOT_URL + marker.imgurl,
+                     'threshold': marker.c_threshold}], 'imgList': [], 'width': "50%"})
+    # for marker in data1:
+    #     newlist = {}
+    #     for marker_data in res:
+    #         if marker.time == marker_data['time']:
+    #             newlist = {'id':marker.faceid,'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl,'threshold':marker.c_threshold,'flag':"1"}
+    #             marker_data['imgList'].append(newlist)
+    #             break
+    #     # if newlist:
+    #     #     print('same time')
+    #     else:
+    #         res.append({'time': marker.time, 'imgList':[{'id':marker.faceid,'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl,'threshold':marker.c_threshold,'flag':"1"}],
+    #                         'width':"50%"})
+
     return res
 
 def getfacemarkers(data,reiddata,fid):
     back = []
     facechecks = data.filter(faceid = fid)
     facereids =reiddata.filter(faceid = fid)
-    matchs = list(facechecks)+list(facereids)
+    # matchs = list(facechecks)+list(facereids)
+    matchs = list(facechecks)
     mark = {}
     url = {}
     reback = {}
@@ -267,6 +317,10 @@ def getfacemarkers(data,reiddata,fid):
         back.append(newlist)
     #给列表back按照列表内字典的time来做升序
     reback['facetime'] = sorted(back, key=lambda back:back['time'], reverse=False)
+    if len(facereids):
+        reback['person_url'] = settings.FACE_IMG_CHECK_ROOT_URL+facereids[0].imgurl
+    else:
+        reback['person_url'] = ''
     reback['marks'] = mark
     reback['url'] = url
     return reback
@@ -298,13 +352,18 @@ class CheckTrack(APIView):
             streamids2 = PersonReidModel.objects.filter(faceid = face['faceid']).values('streamid','timestap').distinct()
             streamids = list(streamids1)+list(streamids2)
             # print(streamids)
+            ##根据timestap做排序
             streamids.sort(key=lambda k: (int(k.get('timestap'))), reverse=False)
             # print(streamids)
             locations = []
             for i,value in enumerate(streamids):
                 # location = StreamModel.objects.filter(id=value['streamid']).values('streamlat','streamlon')[0]
                 stream = CameraStreamModel.objects.get(pk=int(value['streamid']))
+                print(stream)
                 location = stream.cameraId
+                #print(location_id)
+                #location = CameraModel.objects.get(pk=int(location_id))
+                #return JsonResponse(data={}, code="999999", msg="")
                 if i>0:
                     # if a == [float(location['streamlon']), float(location['streamlat'])]:
                     if a == [float(location.cameraLon), float(location.cameraLat)]:
@@ -321,7 +380,6 @@ class CheckTrack(APIView):
                     locations.append(a)
                 # a = [float(location['streamlon']), float(location['streamlat'])]
                 a = [float(location.cameraLon), float(location.cameraLat)]
-
             if cols:
                 col = random.choice(cols)
                 newlist['color'] = col
@@ -332,11 +390,20 @@ class CheckTrack(APIView):
                 break
 
             #newlist['location'] = locationlist if locationlist else [locations[0],[locations[0][0]+0.000001,locations[0][1],locations[0][0]+0.000002,locations[0][1]]]
-            face_msg = FaceModel.objects.get(pk = int(face['faceid']))
-            face_img = FaceImgModel.objects.filter(userid=int(face['faceid'])).values("imgurl")[0]
+            if int(face['faceid']) < 1000:
+                face_msg = FaceModel.objects.get(pk = int(face['faceid']))
+                face_img = FaceImgModel.objects.filter(userid=int(face['faceid'])).values("imgurl")[0]
+                newlist['facename'] = face_msg.username
+                newlist['faceimgurl'] = settings.FACE_IMG_CHECK_ROOT_URL+face_img['imgurl']
+            else:
+                try:
+                    face_img = MatchUpModel.objects.get(faceid=str(face['faceid']))
+                    newlist['faceimgurl'] = settings.FACE_IMG_CHECK_ROOT_URL+face_img.dec_img_url
+                except:
+                    face_img = StrangerModel.objects.filter(faceid=face['faceid']).values('id', 'imgurl')[0]
+                    newlist['faceimgurl'] = settings.FACE_IMG_CHECK_ROOT_URL+face_img['imgurl']
+                newlist['facename'] = '陌生人-'+str(face['faceid'])
             newlist['faceid'] = face['faceid']
-            newlist['facename'] = face_msg.username
-            newlist['faceimgurl'] = face_img['imgurl']
             newlist['location'] = locations
             lists.append(newlist)
                 # print("1111111111111111111111111111")
@@ -351,8 +418,23 @@ class CheckTrack(APIView):
             #     a = [location['streamlon'],location['streamlat']]
             #     locations.append(a)
                 #list['location'].append([StreamModel.objects.get(pk=streamid)['streamlon'],])
-
-        return JsonResponse(data={'list':lists}, code="999999", msg=msg_data)
+        #做轨迹的Marker标记
+        streams_check = CheckModel.objects.values("streamid").distinct()
+        streams_personreid = PersonReidModel.objects.values("streamid").distinct()
+        stream_all = list(streams_check)+list(streams_personreid)
+        streamids = []
+        cameras = []
+        locations = []
+        for stream in stream_all:
+            if stream['streamid'] in streamids:
+                continue
+            streamids.append(stream['streamid'])
+            camera = CameraStreamModel.objects.get(pk=stream['streamid']).cameraId
+            if camera.id in cameras:
+                continue
+            cameras.append(camera.id)
+            locations.append((camera.cameraLon,camera.cameraLat))
+        return JsonResponse(data={'list':lists , 'Markers':locations}, code="999999", msg=msg_data)
         # return JsonResponse(data={}, code="999999", msg="成功")
 
 

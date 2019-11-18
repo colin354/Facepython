@@ -74,7 +74,7 @@ class CameraSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Camera
-        fields = ('id','cameraName','cameraLocation','cameraLat','cameraLon','c_ip','c_username', 'c_password', 'c_token')
+        fields = ('id','cameraName','cameraLocation','cameraLat','cameraLon','c_ip','c_username', 'c_password', 'c_token','c_detectStatus')
 
 
 class CameraStreamSerializer(serializers.ModelSerializer):

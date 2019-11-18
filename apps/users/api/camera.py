@@ -80,9 +80,9 @@ class CameraStream(APIView):
         print(request.data)
         # cameraid = request.data['cameraId']
         # camera = Camera.objects.get(pk=int(cameraid))
-        streamurl_value = request.data['streamUrl']
+        streamurl_value = "/var/www/smartcore/"+request.data['streamUrl']
         start_time = request.data['startTime']
-        start_time=datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+        #start_time=datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
         cap = cv2.VideoCapture(streamurl_value)
         if cap.isOpened():  # 当成功打开视频时cap.isOpened()返回True,否则返回False
             rate = cap.get(5)  # 帧速率
@@ -97,6 +97,7 @@ class CameraStream(APIView):
             request.data['streamTime'] = streamtime_value
             request.data['streamFps'] = streamfps_value
             request.data['startTime'] = start_time
+            request.data['streamUrl'] = settings.FACE_IMG_CHECK_ROOT_URL + request.data['streamUrl']
             print(request.data)
             # cameraStreamModel = CameraStreamModel(cameraId=camera,streamUrl=streamurl_value,streamTime=streamtime_value,streamFps=streamfps_value,streamStatus=request.data['streamStatus'],startTime=request.data['startTime'])
             # cameraStreamModel.save()
@@ -232,7 +233,10 @@ class CameraWS(APIView):
         print('--------11111----------')
         print(config['camera_detect_token']['c_token'])
         if c_token == config['camera_detect_token']['c_token']:
-            buf['faceurl'] = FaceImg.objects.filter(userid_id=int(buf['faceid'])).values('imgurl')[0]['imgurl']
+            if int(buf['faceid']) < 1000:
+                buf['faceurl'] = FaceImg.objects.filter(userid_id=int(buf['faceid'])).values('imgurl')[0]['imgurl']
+            else:
+                buf['faceurl'] = ''
             buf['count'] = len(CameraRealtimeModel.objects.filter(cameraid=str(buf['cameraid'])).values('faceid').distinct())
             result_all = json.dumps(buf)
             async_to_sync(channel_layer.group_send)(c_token, {"type": "user.message", 'text': result_all})

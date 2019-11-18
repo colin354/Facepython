@@ -5,6 +5,7 @@ from apps.users.models import Check as CheckModel
 from apps.users.models import FaceImg as FaceImgModel
 from django.conf import settings
 from apps.users.models import Stream as StreamModel
+from apps.users.models import CameraStream as CameraStreamModel
 from apps.users.models import Face as FaceModel
 from apps.users.models import PersonReid as PersonReidModel
 
@@ -14,13 +15,14 @@ class FaceRecord(APIView):
 
     def post(self, request, *args, **kwargs):
         tempUrl = request.data.get('url')
-        strid = StreamModel.objects.filter(streamurl=settings.FACE_IMG_CHECK_ROOT_URL + tempUrl).values("id","streamfps")[0]
+        #strid = StreamModel.objects.filter(streamurl=settings.FACE_IMG_CHECK_ROOT_URL + tempUrl).values("id","streamfps")[0]
+        strid = CameraStreamModel.objects.filter(streamUrl=settings.FACE_IMG_CHECK_ROOT_URL + tempUrl).values("id", "streamFps")[0]
         buf = request.data.copy()
         buf['streamid'] = strid['id']
-        timebuf = float(buf['timestap']) / float(strid['streamfps'])
+        #timebuf = float(buf['timestap']) / float(strid['streamfps'])
+        timebuf = float(buf['timestap']) / float(strid['streamFps'])
         buf['time'] = str(round(timebuf, 2))
         serializer = PersonReidSerializer(data=buf)
-        print(serializer)
         if serializer.is_valid():
             # 这里可以解析post上传数据，再存储，目前做个简单的
             serializer.save()

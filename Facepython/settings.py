@@ -42,11 +42,24 @@ AUTH_PROFILE_MODEL = 'users.UserProfile'
 #FACE_IMG_CHECK_ROOT_URL = 'http://172.16.3.101:8888'
 #FACE_IMG_ROOT_URL = "http://172.16.3.101:8888/media/"
 
-FACE_IMG_CHECK_ROOT_URL = 'http://10.2.155.139:8888'
-FACE_IMG_ROOT_URL = "http://10.2.155.139:8888/media/"
-CAMERA_RECORD_BASE_URL = '/opt/h5ss/www/mediastore/record/'
-RECORD_ROOT_URL = 'http://10.2.155.139:8888/record_media/'
+#FACE_IMG_CHECK_ROOT_URL = 'http://10.2.155.139:8888'
+#FACE_IMG_ROOT_URL = "http://10.2.155.139:8888/media/"
+#RECORD_ROOT_URL = 'http://10.2.155.139:8888/record_media/'
 CONF_FILE = '/home/face_detect/base.conf'
+CAMERA_RECORD_BASE_URL = '/opt/h5ss/www/mediastore/record/'
+
+
+
+#FACE_IMG_CHECK_ROOT_URL = 'http://172.14.40.60:8888'
+#FACE_IMG_ROOT_URL = "http://172.14.40.60:8888/media/"
+#RECORD_ROOT_URL = 'http://172.14.40.60:8888/record_media/'
+#CENTOS_IP_ROOT = 'http://172.14.40.60:8888'
+
+FACE_IMG_CHECK_ROOT_URL = 'http://221.231.13.230:8888'
+FACE_IMG_ROOT_URL = "http://221.231.13.230:8888/media/"
+RECORD_ROOT_URL = 'http://221.231.13.230:8888/record_media/'
+
+CENTOS_IP_ROOT = 'http://172.16.3.101:8888'
 # Application definition
 INSTALLED_APPS = [
     'channels',
@@ -112,7 +125,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'vue_face',
         'USER': 'root',
-        'PASSWORD': 'root',
+        'PASSWORD': 'vue_face',
         'HOST': '127.0.0.1',
         'PORT': '3306',
         'OPTIONS': { 'init_command': 'SET default_storage_engine=INNODB; SET sql_mode= STRICT_TRANS_TABLES; ' }
