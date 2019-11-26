@@ -99,6 +99,36 @@ class FaceImg(APIView):
                 shutil.copy(file_addr_not_in_temp, file_delete)
             return JsonResponse(data={}, code='999999', msg="成功")
 
+class FaceListView(APIView):
+    TOKEN = 'token'
+    @TokenVerify
+    def get(self, request, *args, **kwargs):
+       facesall = Face.objects.all()
+       serializer = FaceSerializer(facesall, many=True)
+       imgs = []
+       faceids = set()
+       for i in range(len(serializer.data)):
+           imgurlRoot = settings.FACE_IMG_ROOT_URL + str(serializer.data[i]['id'])
+           faceid = str(serializer.data[i]['id'])
+           serializer.data[i]['imgdir'] = imgurlRoot
+           serializer.data[i]['imgurls'] = self.dealImgUrls(
+               list(FaceImgModel.objects.filter(userid__exact=serializer.data[i]['id']).values_list('imgurl')))
+           if faceid in faceids:
+               continue
+           faceids.add(int(faceid))
+           img = FaceImgModel.objects.filter(userid_id=faceid).values('userid_id', 'imgurl')
+           if len(img) > 0:
+               username = FaceModel.objects.get(pk=faceid).username
+               img[0]['username'] = username
+               imgs.append(img[0])
+       return JsonResponse(data={'list': serializer.data, 'imgList':imgs, 'count': len(facesall),'faceids':faceids}, code='999999', msg="成功")
+
+    def dealImgUrls(self, imgUrls):
+        res = []
+        for v in imgUrls:
+            res.append({'name':v[0].split('/')[-1], 'url':v[0]})
+        return res
+
 class FaceView(APIView):
     TOKEN = 'token'
 
@@ -284,6 +314,7 @@ class StrangerView(APIView):
             return JsonResponse(data={}, code="999999", msg="成功")
         return JsonResponse(data=serializer.errors, code="999999", msg="失败")
 
+face_list = FaceListView.as_view()
 face_img = FaceImg.as_view()
 faces = FaceView.as_view()
 strangers= StrangerView.as_view()

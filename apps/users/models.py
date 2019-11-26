@@ -289,3 +289,32 @@ class CameraRealtime(models.Model):
     class Meta:
         verbose_name="实时监控数据"
         verbose_name_plural = verbose_name
+
+class WarningType(models.Model):
+    WARNING_LEVEL = (
+        (0, 'Ⅰ 级'),
+        (1, 'Ⅱ 级'),
+        (2, 'Ⅲ 级'),
+        (3, 'Ⅳ 级'),
+        (4, 'Ⅴ 级'),
+    )
+    warning_level = models.IntegerField(choices=WARNING_LEVEL, default=0 ,verbose_name='预警级别')
+    warning_type  = models.CharField(max_length=10, null=True, blank=True, verbose_name='预警事件类型')
+    
+    class Meta:
+        verbose_name="预警事件类型表"
+        verbose_name_plural = verbose_name
+
+class WarningEvent(models.Model):
+    warning_id            = models.CharField(max_length=100, null=True, blank=True, verbose_name='预警事件编号')
+    warning_name          = models.CharField(max_length=100, null=True, blank=True, verbose_name='预警事件名称')
+    warning_type_id       = models.ForeignKey('WarningType', on_delete=models.CASCADE)
+    warning_people_max    = models.CharField(max_length=100, null=True, blank=True, verbose_name='行人数量上限')
+    warning_car_max       = models.CharField(max_length=100, null=True, blank=True, verbose_name='车辆数量上限')
+    warning_target_people = models.CharField(max_length=100, null=True, blank=True, verbose_name='目标行人')
+    warning_target_car    = models.CharField(max_length=100, null=True, blank=True, verbose_name='目标车辆')
+    warning_target_camera = models.CharField(max_length=100, null=True, blank=True, verbose_name='目标摄像头')
+
+    class Meta:
+        verbose_name="预警事件表"
+        verbose_name_plural = verbose_name

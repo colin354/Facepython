@@ -5,6 +5,7 @@ from apps.users.models import Face
 from apps.users.models import FaceImg
 from apps.users.models import Check
 from apps.users.models import Stream
+from apps.users.models import WarningType,WarningEvent
 from apps.users.models import Camera,Stranger,CameraStream,PersonReid,PersonDetect,MatchUp,CameraRealtime
 
 class TokenSerializer(serializers.ModelSerializer):
@@ -133,3 +134,13 @@ class CameraRealtimeSerializer(serializers.ModelSerializer):
     class Meta:
         model = CameraRealtime
         fields = ("cameraid","c_x","c_y","c_w","c_h","c_threshold","imgurl","faceid")
+
+class WarningTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WarningType
+        fields = ("id","warning_level","warning_type")
+
+class WarningEventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WarningEvent
+        fields = ("id","warning_id","warning_name","warning_type_id","warning_people_max","warning_car_max","warning_target_people","warning_target_car","warning_target_camera")
