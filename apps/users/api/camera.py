@@ -212,12 +212,15 @@ class CameraRecordForCS(APIView):
 
 class CameraWS(APIView):
     def post(self,request,*args,**kwargs):
+        print("111")
         print(request.data)
-        print("1111111111111111111111")
+        print("222")
         buf = request.data.copy()
+        print(buf)
+        print("333")
         #buf['cameraid'] = str(Camera.objects.filter(c_ip= buf['cameraip']).values('id')[0]['id'])
         buf['imgurl'] = settings.FACE_IMG_CHECK_ROOT_URL+buf['imgurl']
-        print("1111111111111111111111")
+        print("444")
         print(buf)
         serializer = CameraRealtimeSerializer(data=buf)
         if serializer.is_valid():

@@ -281,7 +281,7 @@ class CameraRealtime(models.Model):
     c_w = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框w")
     c_h = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框h")
     c_threshold = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测阈值")
-    imgurl = models.CharField(max_length=100, null=True, verbose_name="图片url")
+    imgurl = models.CharField(max_length=200, null=True, verbose_name="图片url")
     faceid = models.CharField(max_length=10, verbose_name='人员ID')
     #c_token = models.CharField(max_length=24, null=True, verbose_name="摄像头token")
     #timestap = models.CharField(max_length=100, verbose_name="时间戳")

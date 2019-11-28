@@ -90,8 +90,11 @@ class StreamView(APIView):
             streamlocations = Stream.objects.all().values('streamlocation').distinct()
             cameralocations = Camera.objects.all().values('cameraLocation').distinct()
             newlist = []
+            ii = 10000
             for cameralocation in cameralocations:
                 ret1 = {}
+                ii = ii + 1
+                ret1['id'] = ii
                 ret1['label']=cameralocation['cameraLocation']
                 ret1['streamlng'] = []
                 # streamnames = Stream.objects.filter(streamlocation=streamlocation['streamlocation']).values('streamname','id','streamlon','streamlat','streamurl')
