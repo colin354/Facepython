@@ -6,6 +6,7 @@ from users.common.api_response import JsonResponse
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import User
 from apps.users.utility import TokenVerify
+from apps.users.serializers import LoginRecordSerializer
 
 import pdb
 #import random
@@ -20,8 +21,6 @@ def captcha():
     hashkey = CaptchaStore.generate_key()   #验证码答案
     image_url = captcha_image_url(hashkey)  #验证码地址
     captcha_data = {'hashkey': hashkey, 'image_url': image_url}
-    #print("*********************************")
-    #print("*********************************")
     #local_imag_url = "http://127.0.0.1:8000"+image_url
     return(captcha_data)
     #return local_imag_url
@@ -42,17 +41,29 @@ class ObtainAuthToken(APIView):
     serializer_class = AuthTokenSerializer
 
     def post(self, request, *args, **kwargs):
+        login_list = {}
+        login_list['login_username'] = request.data['username']
+        login_list['login_op'] = '登录'
+        login_list['login_ip'] = request.META['REMOTE_ADDR']
+        login_list['login_useragent'] = request.META['HTTP_USER_AGENT']
         uuid = request.data.get('uuid','')
         captcha = request.data.get('captcha','')
         captcha_up = captcha.upper()
-        print(captcha_up)
         get_challenge = CaptchaStore.objects.get(hashkey = uuid['hashkey']).challenge
-        print(get_challenge)
         if captcha_up != get_challenge:
+            login_list['login_status'] = 0
             data = "error"
+            login_serializer = LoginRecordSerializer(data=login_list)
+            if login_serializer.is_valid():
+                login_serializer.save()
             return JsonResponse(data=data, code="1", msg="验证码出错")
+
+        login_list['login_status'] = 1
+        login_serializer = LoginRecordSerializer(data=login_list)
+        if login_serializer.is_valid():
+            login_serializer.save()
         serializer = self.serializer_class(data=request.data,context={"request": request})
-        serializer.is_valid(raise_exception=True)
+        serializer.is_valid()
         user = serializer.validated_data["user"]
         data = TokenSerializer(Token.objects.get(user=user)).data
         # pdb.set_trace()
@@ -64,20 +75,14 @@ class UserProfile(APIView):
     @TokenVerify
     def get(self, request, format=None):
         token = request.META['HTTP_AUTHORIZATION']
-        print(token)
-        print('****************************')
         user_id = Token.objects.get(key=token).user_id
         username = User.objects.get(id=user_id).username
-        print(username)
         # pdb.set_trace()
         return JsonResponse(data={"username":username}, code='999999', msg='成功')
 
-
 class verificationcode(APIView):
-
     def get(self ,request , *args,**kwargs):
         return JsonResponse(captcha() , code = '0', msg = '验证码' , content_type='application/json')
-
 
 verification_code = verificationcode.as_view()
 obtain_auth_token = ObtainAuthToken.as_view()

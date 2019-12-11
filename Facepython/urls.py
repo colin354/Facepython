@@ -16,7 +16,7 @@ Including another URLconf
 from django.conf.urls import url, include
 from django.contrib import admin
 from rest_framework.authtoken import views
-from users.api import user,face,stream,facerecord,camera,warning
+from users.api import user,face,stream,facerecord,camera,warning,log
 #from users.api import face
 from django.views.generic import TemplateView
 from django.conf.urls.static import static
@@ -50,8 +50,12 @@ urlpatterns = [
     url(r'^sys/cameras',camera.cameras),
     url(r'^sys/check',check.check_track),
     url(r'^sys/detect_ctl',detect_ctl.detect),
+    url(r'^sys/log/login/page',log.login_record),
+    url(r'^sys/log/operation/page',log.operation_record),
     url(r'^api/warningType',warning.warning_type),
     url(r'^api/warningEvent',warning.warning_event),
+    url(r'^api/warningHistory',warning.warning_history),
+    url(r'^api/warningCtrl',warning.warning_event_ctrl),
     #url(r'^api/check/location', check.check_location),
     url(r'^api/person',person.person_detect),
     url(r'^api/match',match.match_up),

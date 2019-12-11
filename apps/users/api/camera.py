@@ -1,8 +1,9 @@
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from users.common.api_response import JsonResponse
-from apps.users.models import Camera,CameraStream,Face,FaceImg
-from apps.users.serializers import CameraSerializer,CameraStreamSerializer,StreamSerializer,CameraRealtimeSerializer
+from apps.users.models import Camera,CameraStream,Face,FaceImg,WarningType,WarningEvent,WarningHistory
+from apps.users.serializers import CameraSerializer,CameraStreamSerializer,StreamSerializer,CameraRealtimeSerializer,WarningTypeSerializer,WarningEventSerializer
+from apps.users.serializers import WarningHistorySerializer
 from rest_framework import serializers
 from apps.users.utility import TokenVerify
 from apps.users.models import CameraStream as CameraStreamModel
@@ -212,16 +213,10 @@ class CameraRecordForCS(APIView):
 
 class CameraWS(APIView):
     def post(self,request,*args,**kwargs):
-        print("111")
-        print(request.data)
-        print("222")
         buf = request.data.copy()
-        print(buf)
-        print("333")
         #buf['cameraid'] = str(Camera.objects.filter(c_ip= buf['cameraip']).values('id')[0]['id'])
         buf['imgurl'] = settings.FACE_IMG_CHECK_ROOT_URL+buf['imgurl']
-        print("444")
-        print(buf)
+        warning_ret = warning_judge(buf)
         serializer = CameraRealtimeSerializer(data=buf)
         if serializer.is_valid():
             serializer.save()
@@ -230,11 +225,7 @@ class CameraWS(APIView):
         c_token = Camera.objects.get(pk = int(buf['cameraid'])).c_token
         conf_file = settings.CONF_FILE
         config = configparser.ConfigParser()
-        print('--------11111----123432------')
-        print(c_token)
         config.read(conf_file,encoding="utf-8")
-        print('--------11111----------')
-        print(config['camera_detect_token']['c_token'])
         if c_token == config['camera_detect_token']['c_token']:
             if int(buf['faceid']) < 1000:
                 buf['faceurl'] = FaceImg.objects.filter(userid_id=int(buf['faceid'])).values('imgurl')[0]['imgurl']
@@ -244,8 +235,6 @@ class CameraWS(APIView):
             result_all = json.dumps(buf)
             async_to_sync(channel_layer.group_send)(c_token, {"type": "user.message", 'text': result_all})
             #async_to_sync(channel_layer.send)(c_token, {"type": "user.message", 'text': result_all})
-            print('--------2222222----------')
-        print('memememmeeeeeeee')
         return JsonResponse(data={}, code="999999", msg="成功")
 
 class CameraReal(APIView):
@@ -302,6 +291,28 @@ def getfilelist(filepath):
             if '.mp4' in child:
                 files.append(child)
     return files
+
+def warning_judge(buf):
+    warningevent = WarningEvent.objects.all()
+    serializer = WarningEventSerializer(warningevent, many=True)
+    result_list = serializer.data
+    print(buf)
+    for i in range(len(serializer.data)):
+        if(buf['cameraid'] in serializer.data[i]['warning_target_camera'].split('.') and serializer.data[i]['warning_event_flag'] == 1):
+            #python没有switch语句，使用多个if判断,目标行人，目标车辆，徘徊，车流量上限等
+            if( serializer.data[i]['warning_target_people'] != None and buf['faceid'] in serializer.data[i]['warning_target_people'].split('.') ):
+                warning_thing = {}
+                warning_thing['warning_camera_id'] = buf['cameraid']
+                warning_thing['warning_video_url'] = ''
+                warning_thing['warning_event_id'] = serializer.data[i]['id']
+                warning_thing['warning_message'] = '目标行人事件'
+                warning_history_serializer = WarningHistorySerializer(data=warning_thing)
+                if warning_history_serializer.is_valid():
+                    warning_history_serializer.save()
+                print(warning_thing)
+    print('------------------------------------------------')
+    result = 1
+    return result
 
 cameras = CameraView.as_view()
 camera_real = CameraReal.as_view()

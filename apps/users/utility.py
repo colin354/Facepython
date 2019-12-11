@@ -20,5 +20,10 @@ def TokenVerify(func):
         return func(self, *args, **kwargs)
     return handler
 
-
-
+def OperationLog(func):
+    @wraps(func)
+    def handler(self,*args, **kwargs):
+        request = args[0]
+        print(request)
+        return func(self, *args, **kwargs)
+    return handler

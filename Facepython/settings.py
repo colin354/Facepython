@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 
 import os
 import sys
+from celery.schedules import crontab
+from celery.schedules import timedelta
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 print(BASE_DIR)
@@ -69,9 +71,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'djcelery',
     'users.apps.UsersConfig',
     'corsheaders',
     'rest_framework',
+    'apps',
     'rest_framework.authtoken',
     'captcha'
 ]
@@ -234,7 +238,21 @@ CAPTCHA_LENGTH = 4  # 字符个数
 CAPTCHA_TIMEOUT = 1  # 超时(minutes)
 CAPTCHA_FONT_SIZE = 30 #设置字母字体大小
 
-
-
 CAPTCHA_BACKGROUND_COLOR = '#FFFAFA'#验证码背景颜色
 CAPTCHA_FOREGROUND_COLOR = '#0000FF'#验证码字体颜色
+
+import djcelery
+djcelery.setup_loader()
+BROKER_URL = 'redis://127.0.0.1:6379/'
+CELERY_IMPORTS= ('apps.users.tasks')
+CELERYD_CONCURRENCY = 5
+CELERY_TIMEZONE = 'Asia/Shanghai'
+CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
+
+CELERYBEAT_SCHEDULE = { #定时器策略
+    'celery_test': {
+        "task":"apps.users.tasks.hello_world",
+        "schedule": timedelta(seconds=30),
+        "args":(),
+    },
+}

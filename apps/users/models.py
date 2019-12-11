@@ -300,12 +300,16 @@ class WarningType(models.Model):
     )
     warning_level = models.IntegerField(choices=WARNING_LEVEL, default=0 ,verbose_name='预警级别')
     warning_type  = models.CharField(max_length=10, null=True, blank=True, verbose_name='预警事件类型')
-    
+ 
     class Meta:
-        verbose_name="预警事件类型表"
+        verbose_name="预警事件类型"
         verbose_name_plural = verbose_name
-
+ 
 class WarningEvent(models.Model):
+    WARNING_FLAG = (
+        (0,'停止'),
+        (1,'启动')
+    )
     warning_id            = models.CharField(max_length=100, null=True, blank=True, verbose_name='预警事件编号')
     warning_name          = models.CharField(max_length=100, null=True, blank=True, verbose_name='预警事件名称')
     warning_type_id       = models.ForeignKey('WarningType', on_delete=models.CASCADE)
@@ -314,7 +318,47 @@ class WarningEvent(models.Model):
     warning_target_people = models.CharField(max_length=100, null=True, blank=True, verbose_name='目标行人')
     warning_target_car    = models.CharField(max_length=100, null=True, blank=True, verbose_name='目标车辆')
     warning_target_camera = models.CharField(max_length=100, null=True, blank=True, verbose_name='目标摄像头')
+    warning_event_flag    = models.IntegerField(blank=True,null=True, default=0,verbose_name='预警是否启动')
+    warning_event_time    = models.DateTimeField(auto_now_add=True,verbose_name='事件启动时间')
 
     class Meta:
-        verbose_name="预警事件表"
+        verbose_name="预警事件"
+        verbose_name_plural = verbose_name
+  
+class WarningHistory(models.Model):
+    warning_camera_id     = models.CharField(max_length=100, null=True, blank=True, verbose_name='预警摄像头')
+    warning_time          = models.DateTimeField(auto_now_add=True,verbose_name='预警发生时间')
+    warning_video_url     = models.CharField(max_length=150, null=True, blank=True, verbose_name='预警视频url')
+    warning_message       = models.CharField(max_length=250, null=True, blank=True, verbose_name='预警事件信息')
+    warning_event_id      = models.ForeignKey('WarningEvent', on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name="预警事件历史"
+        verbose_name_plural = verbose_name
+
+class LoginRecord(models.Model):
+    login_username     = models.CharField(max_length=100, null=True, blank=True, verbose_name='登录用户名')
+    login_op       = models.CharField(max_length=100, null=True, blank=True, verbose_name='操作类型')
+    login_status   = models.IntegerField(default=0,null=True, blank=True, verbose_name='状态')
+    login_ip       = models.CharField(max_length=100, null=True, blank=True, verbose_name='操作ip')
+    login_useragent= models.CharField(max_length=256, null=True, blank=True, verbose_name='用户代理')
+    login_time     = models.DateTimeField(auto_now_add=True,verbose_name='登录时间')
+    
+    class Meta:
+        verbose_name="登录日志"
+        verbose_name_plural = verbose_name
+
+class OperationRecord(models.Model):
+    operation_username  = models.CharField(max_length=100, null=True, blank=True, verbose_name='登录用户名')
+    operation_op        = models.CharField(max_length=100, null=True, blank=True, verbose_name='操作类型')
+    operation_method    = models.CharField(max_length=100, null=True, blank=True, verbose_name='请求方法')
+    operation_params    = models.CharField(max_length=100, null=True, blank=True, verbose_name='请求参数')
+    operation_url       = models.CharField(max_length=100, null=True, blank=True, verbose_name='请求url')
+    operation_status    = models.IntegerField(default=0,null=True, blank=True, verbose_name='状态')
+    operation_ip        = models.CharField(max_length=100, null=True, blank=True, verbose_name='操作ip')
+    operation_useragent= models.CharField(max_length=100, null=True, blank=True, verbose_name='用户代理')
+    operation_time     = models.DateTimeField(auto_now_add=True,verbose_name='登录时间')
+
+    class Meta:
+        verbose_name="操作日志"
         verbose_name_plural = verbose_name

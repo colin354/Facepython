@@ -5,7 +5,8 @@ from apps.users.models import Face
 from apps.users.models import FaceImg
 from apps.users.models import Check
 from apps.users.models import Stream
-from apps.users.models import WarningType,WarningEvent
+from apps.users.models import WarningType,WarningEvent,WarningHistory
+from apps.users.models import LoginRecord,OperationRecord
 from apps.users.models import Camera,Stranger,CameraStream,PersonReid,PersonDetect,MatchUp,CameraRealtime
 
 class TokenSerializer(serializers.ModelSerializer):
@@ -143,4 +144,19 @@ class WarningTypeSerializer(serializers.ModelSerializer):
 class WarningEventSerializer(serializers.ModelSerializer):
     class Meta:
         model = WarningEvent
-        fields = ("id","warning_id","warning_name","warning_type_id","warning_people_max","warning_car_max","warning_target_people","warning_target_car","warning_target_camera")
+        fields = ("id","warning_id","warning_name","warning_type_id","warning_people_max","warning_car_max","warning_target_people","warning_target_car","warning_target_camera","warning_event_flag","warning_event_time")
+
+class WarningHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WarningHistory
+        fields = ("id","warning_camera_id","warning_video_url","warning_event_id","warning_message","warning_time")
+
+class LoginRecordSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LoginRecord
+        fields = ("id","login_username","login_op","login_status","login_ip","login_useragent","login_time")
+
+class OperationRecordSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OperationRecord
+        fields = ("id","operation_username","operation_op","operation_method","operation_params","operation_url","operation_status","operation_ip","operation_useragent","operation_time")
