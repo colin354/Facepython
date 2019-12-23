@@ -81,8 +81,14 @@ class CameraStream(APIView):
         print(request.data)
         # cameraid = request.data['cameraId']
         # camera = Camera.objects.get(pk=int(cameraid))
-        streamurl_value = "/var/www/smartcore/"+request.data['streamUrl']
-        start_time = request.data['startTime']
+        # cameraid = request.data['cameraId']
+        token_buf = request.data['imgurl'].split('/')[2]
+        camera = Camera.objects.filter(c_token=token_buf)[0]
+        #streamurl_value = "/var/www/smartcore/"+request.data['streamUrl']
+        streamurl_value = "/mnt/public/media"+request.data['imgurl']
+        #start_time = request.data['startTime']
+        start_time = request.data['imgurl'].split('/')[-1].split('.')[0]
+        print(streamurl_value)         
         #start_time=datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
         cap = cv2.VideoCapture(streamurl_value)
         if cap.isOpened():  # 当成功打开视频时cap.isOpened()返回True,否则返回False
@@ -93,17 +99,18 @@ class CameraStream(APIView):
             seconds = ("%.1f" % seconds)
             streamfps_value = str(rate)
             streamtime_value = str(seconds)
-            print("1111111111111111111111111111111111111111")
             # request.data['cameraId'] = camera
-            request.data['streamTime'] = streamtime_value
-            request.data['streamFps'] = streamfps_value
-            request.data['startTime'] = start_time
-            request.data['streamUrl'] = settings.FACE_IMG_CHECK_ROOT_URL + request.data['streamUrl']
-            print(request.data)
+            buf = dict()
+            buf['cameraId'] = camera.id
+            buf['streamTime'] = streamtime_value
+            buf['streamFps'] = streamfps_value
+            buf['startTime'] = start_time
+            buf['streamUrl'] = settings.FACE_IMG_REAL_ROOT_URL + request.data['imgurl']
+            print(buf)
             # cameraStreamModel = CameraStreamModel(cameraId=camera,streamUrl=streamurl_value,streamTime=streamtime_value,streamFps=streamfps_value,streamStatus=request.data['streamStatus'],startTime=request.data['startTime'])
             # cameraStreamModel.save()
             # return JsonResponse(data={}, code='999999', msg='success')
-            serializers = CameraStreamSerializer(data = request.data)
+            serializers = CameraStreamSerializer(data = buf)
             #cameraStreamModel = CameraStreamModel(streamurl=streamurl_value,cameraid =camera,streamfps = streamfps_value,streamtime = streamtime_value,streamstatus='0',starttime = start_time)
             #print(cameraStreamModel)
             if serializers.is_valid():
@@ -213,9 +220,15 @@ class CameraRecordForCS(APIView):
 
 class CameraWS(APIView):
     def post(self,request,*args,**kwargs):
+        print("now cameraws")
+        print(request.data)
         buf = request.data.copy()
         #buf['cameraid'] = str(Camera.objects.filter(c_ip= buf['cameraip']).values('id')[0]['id'])
-        buf['imgurl'] = settings.FACE_IMG_CHECK_ROOT_URL+buf['imgurl']
+        buf['imgurl'] = settings.FACE_IMG_REAL_ROOT_URL+buf['imgurl']
+        token_buf = buf['url'].split('/')[-1]
+        print(token_buf)
+        buf['cameraid'] = Camera.objects.filter(c_token = token_buf).values("id")[0]['id']
+        print(buf['cameraid'])
         warning_ret = warning_judge(buf)
         serializer = CameraRealtimeSerializer(data=buf)
         if serializer.is_valid():

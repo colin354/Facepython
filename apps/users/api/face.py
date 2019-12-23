@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from apps.users.serializers import FaceSerializer,StrangerSerializer
 from rest_framework.parsers import JSONParser
-from apps.users.utility import TokenVerify
+from apps.users.utility import TokenVerify,OperationLog
 from apps.users.models import FaceImg as FaceImgModel
 from apps.users.models import Face as FaceModel
 import os, shutil
@@ -158,6 +158,7 @@ class FaceView(APIView):
         return JsonResponse(data=serializer.errors, code="-1", msg="失败")
 
     @TokenVerify
+    @OperationLog
     def get(self, request, *args, **kwargs):
         limit = request.GET.get('limit')
         page = request.GET.get('page')

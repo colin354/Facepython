@@ -352,11 +352,11 @@ class OperationRecord(models.Model):
     operation_username  = models.CharField(max_length=100, null=True, blank=True, verbose_name='登录用户名')
     operation_op        = models.CharField(max_length=100, null=True, blank=True, verbose_name='操作类型')
     operation_method    = models.CharField(max_length=100, null=True, blank=True, verbose_name='请求方法')
-    operation_params    = models.CharField(max_length=100, null=True, blank=True, verbose_name='请求参数')
+    operation_params    = models.CharField(max_length=200, null=True, blank=True, verbose_name='请求参数')
     operation_url       = models.CharField(max_length=100, null=True, blank=True, verbose_name='请求url')
     operation_status    = models.IntegerField(default=0,null=True, blank=True, verbose_name='状态')
     operation_ip        = models.CharField(max_length=100, null=True, blank=True, verbose_name='操作ip')
-    operation_useragent= models.CharField(max_length=100, null=True, blank=True, verbose_name='用户代理')
+    operation_useragent= models.CharField(max_length=200, null=True, blank=True, verbose_name='用户代理')
     operation_time     = models.DateTimeField(auto_now_add=True,verbose_name='登录时间')
 
     class Meta:

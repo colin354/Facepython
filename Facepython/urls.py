@@ -21,7 +21,7 @@ from users.api import user,face,stream,facerecord,camera,warning,log
 from django.views.generic import TemplateView
 from django.conf.urls.static import static
 from django.conf import settings
-from users.api import check,person,match,detect_ctl
+from users.api import check,person,match,detect_ctl,screen_data
 urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^admin/', admin.site.urls),
@@ -52,6 +52,7 @@ urlpatterns = [
     url(r'^sys/detect_ctl',detect_ctl.detect),
     url(r'^sys/log/login/page',log.login_record),
     url(r'^sys/log/operation/page',log.operation_record),
+    url(r'^api/screenData',screen_data.screen_info),
     url(r'^api/warningType',warning.warning_type),
     url(r'^api/warningEvent',warning.warning_event),
     url(r'^api/warningHistory',warning.warning_history),

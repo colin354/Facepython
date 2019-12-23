@@ -59,6 +59,7 @@ CAMERA_RECORD_BASE_URL = '/opt/h5ss/www/mediastore/record/'
 
 FACE_IMG_CHECK_ROOT_URL = 'http://221.231.13.230:8888'
 FACE_IMG_ROOT_URL = "http://221.231.13.230:8888/media/"
+FACE_IMG_REAL_ROOT_URL = "http://221.231.13.230:8888/record_video"
 RECORD_ROOT_URL = 'http://221.231.13.230:8888/record_media/'
 
 CENTOS_IP_ROOT = 'http://172.16.3.101:8888'

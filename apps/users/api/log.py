@@ -11,7 +11,7 @@ import datetime,time
 
 class LoginRecordView(APIView):
     @TokenVerify
-    #@OperationLog
+    @OperationLog
     def get(self,request,*args,**kwargs):
         print('------')
         print(self)
@@ -22,8 +22,11 @@ class LoginRecordView(APIView):
 
 class OperationRecordView(APIView):
     @TokenVerify
+    @OperationLog
     def get(self,request,*args,**kwargs):
-        return JsonResponse(data={}, code="999999", msg="成功")
+        operationrecord = OperationRecord.objects.all()
+        serializer = OperationRecordSerializer(operationrecord,many=True)
+        return JsonResponse(data={'list':serializer.data}, code="999999", msg="成功")
 
 login_record = LoginRecordView.as_view()
 operation_record = OperationRecordView.as_view()
