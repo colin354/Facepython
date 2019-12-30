@@ -134,7 +134,7 @@ class MatchUpSerializer(serializers.ModelSerializer):
 class CameraRealtimeSerializer(serializers.ModelSerializer):
     class Meta:
         model = CameraRealtime
-        fields = ("cameraid","c_x","c_y","c_w","c_h","c_threshold","imgurl","faceid")
+        fields = ("cameraid","c_x","c_y","c_w","c_h","c_threshold","StreamUrl","imgurl","faceid")
 
 class WarningTypeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -149,7 +149,7 @@ class WarningEventSerializer(serializers.ModelSerializer):
 class WarningHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = WarningHistory
-        fields = ("id","warning_camera_id","warning_video_url","warning_event_id","warning_message","warning_time")
+        fields = ("id","warning_camera_id","warning_video_url","warning_event_id","warning_message","warning_time","warning_capture_url","warning_target_url")
 
 class LoginRecordSerializer(serializers.ModelSerializer):
     class Meta:

@@ -1,7 +1,7 @@
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from users.common.api_response import JsonResponse
-from apps.users.models import WarningType,WarningEvent,WarningHistory,Face
+from apps.users.models import Camera,WarningType,WarningEvent,WarningHistory,Face
 from apps.users.serializers import WarningTypeSerializer,WarningEventSerializer,WarningHistorySerializer
 from apps.users.tasks import add,start,stop
 from rest_framework import serializers
@@ -80,7 +80,21 @@ class WarningEventCtrlView(APIView):
 class WarningHistoryView(APIView):
     @TokenVerify
     def get(self,request,*args,**kwargs):
-        print(request.data)
+        print('------history---------')
+        c_token = request.GET.get('c_token')
+        if c_token :
+            camera_id = Camera.objects.get(c_token = c_token).id
+            warninghistory = WarningHistory.objects.filter(warning_camera_id = camera_id).order_by('-id')[:5]
+            serializer = WarningHistorySerializer(warninghistory, many=True)
+            for i in range(len(serializer.data)):
+                warningevent = WarningEvent.objects.get(pk=int(serializer.data[i]['warning_event_id']))
+                warningtype = WarningType.objects.get(pk=int(warningevent.warning_type_id_id))
+                serializer.data[i]['warning_type']  = warningtype.warning_type
+                serializer.data[i]['warning_level'] = str(warningtype.warning_level) + '级'
+                serializer.data[i]['warning_name'] = warningevent.warning_name
+                serializer.data[i]['warning_id'] = warningevent.warning_id
+            print(serializer.data)
+            return JsonResponse(data={'list':serializer.data}, code="999999", msg="成功")
         warninghistory = WarningHistory.objects.all()
         serializer = WarningHistorySerializer(warninghistory, many=True)
         for i in range(len(serializer.data)):
@@ -90,7 +104,6 @@ class WarningHistoryView(APIView):
             serializer.data[i]['warning_level'] = warningtype.warning_level
             serializer.data[i]['warning_name'] = warningevent.warning_name
             serializer.data[i]['warning_id'] = warningevent.warning_id
-        print(serializer.data)
         return JsonResponse(data={'list':serializer.data}, code="999999", msg="成功")
 
     @TokenVerify

@@ -82,7 +82,7 @@ class Stranger(models.Model):
     faceid  = models.CharField(max_length=10, verbose_name='人脸ID')
     c_gender = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测性别")
     c_age = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测年龄")
-    imgurl = models.CharField(max_length=100, null=True, verbose_name="图片url")
+    imgurl = models.CharField(max_length=200, null=True, verbose_name="图片url")
     class Meta:
         verbose_name = "陌生人数据"
         verbose_name_plural = verbose_name
@@ -281,6 +281,7 @@ class CameraRealtime(models.Model):
     c_w = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框w")
     c_h = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框h")
     c_threshold = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测阈值")
+    StreamUrl = models.CharField(max_length=200,null=True,blank=True,verbose_name="视频名称")
     imgurl = models.CharField(max_length=200, null=True, verbose_name="图片url")
     faceid = models.CharField(max_length=10, verbose_name='人员ID')
     #c_token = models.CharField(max_length=24, null=True, verbose_name="摄像头token")
@@ -330,6 +331,8 @@ class WarningHistory(models.Model):
     warning_time          = models.DateTimeField(auto_now_add=True,verbose_name='预警发生时间')
     warning_video_url     = models.CharField(max_length=150, null=True, blank=True, verbose_name='预警视频url')
     warning_message       = models.CharField(max_length=250, null=True, blank=True, verbose_name='预警事件信息')
+    warning_capture_url   = models.CharField(max_length=250, null=True, blank=True, verbose_name='预警抓拍图片')
+    warning_target_url    = models.CharField(max_length=250, null=True, blank=True, verbose_name='匹配目标图片')
     warning_event_id      = models.ForeignKey('WarningEvent', on_delete=models.CASCADE)
 
     class Meta:

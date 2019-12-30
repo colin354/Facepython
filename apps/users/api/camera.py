@@ -1,8 +1,8 @@
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from users.common.api_response import JsonResponse
-from apps.users.models import Camera,CameraStream,Face,FaceImg,WarningType,WarningEvent,WarningHistory
-from apps.users.serializers import CameraSerializer,CameraStreamSerializer,StreamSerializer,CameraRealtimeSerializer,WarningTypeSerializer,WarningEventSerializer
+from apps.users.models import Camera,CameraStream,Face,FaceImg,WarningType,WarningEvent,WarningHistory,Stranger
+from apps.users.serializers import CameraSerializer,CameraStreamSerializer,StreamSerializer,CameraRealtimeSerializer,WarningTypeSerializer,WarningEventSerializer,StrangerSerializer
 from apps.users.serializers import WarningHistorySerializer
 from rest_framework import serializers
 from apps.users.utility import TokenVerify
@@ -13,7 +13,8 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import os,json
 import cv2
-import datetime
+import datetime,time
+import pandas as pd
 import paramiko
 import configparser
 
@@ -88,7 +89,7 @@ class CameraStream(APIView):
         streamurl_value = "/mnt/public/media"+request.data['imgurl']
         #start_time = request.data['startTime']
         start_time = request.data['imgurl'].split('/')[-1].split('.')[0]
-        print(streamurl_value)         
+        print(streamurl_value)
         #start_time=datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
         cap = cv2.VideoCapture(streamurl_value)
         if cap.isOpened():  # 当成功打开视频时cap.isOpened()返回True,否则返回False
@@ -114,7 +115,11 @@ class CameraStream(APIView):
             #cameraStreamModel = CameraStreamModel(streamurl=streamurl_value,cameraid =camera,streamfps = streamfps_value,streamtime = streamtime_value,streamstatus='0',starttime = start_time)
             #print(cameraStreamModel)
             if serializers.is_valid():
-                serializers.save()
+                camera_stream = serializers.save()
+                print(camera_stream)
+                camerareals = CameraRealtimeModel.objects.filter(StreamUrl=request.data['imgurl']).values("faceid","timestap","c_x","c_y","c_w","c_h",
+                                                                                                          "cameraid","StreamUrl")
+                print(type(camerareals))
                 return JsonResponse(data={}, code='999999',msg='success')
             return JsonResponse(data=serializers.errors, code="999999", msg="失败")
         return JsonResponse(data={}, code="-1", msg="failed")
@@ -223,14 +228,23 @@ class CameraWS(APIView):
         print("now cameraws")
         print(request.data)
         buf = request.data.copy()
-        #buf['cameraid'] = str(Camera.objects.filter(c_ip= buf['cameraip']).values('id')[0]['id'])
+        print(buf)
+        #buf['cameraid'] = str(Camera.objects.filter(c_ip= buf['cameraip']).values('id')[0]['id'])a
+        if buf["c_threshold"] == "1":
+            serializer = StrangerSerializer(data=buf)
+            if serializer.is_valid():
+                serializer.save()
+            else:
+                return JsonResponse(data=serializer.errors,code='999999',msg="failed")
         buf['imgurl'] = settings.FACE_IMG_REAL_ROOT_URL+buf['imgurl']
+        print(buf['imgurl'])
         token_buf = buf['url'].split('/')[-1]
         print(token_buf)
         buf['cameraid'] = Camera.objects.filter(c_token = token_buf).values("id")[0]['id']
-        print(buf['cameraid'])
+        warning_ret = []
         warning_ret = warning_judge(buf)
         serializer = CameraRealtimeSerializer(data=buf)
+        print(serializer)
         if serializer.is_valid():
             serializer.save()
         channel_layer = get_channel_layer()
@@ -239,21 +253,35 @@ class CameraWS(APIView):
         conf_file = settings.CONF_FILE
         config = configparser.ConfigParser()
         config.read(conf_file,encoding="utf-8")
+        print('-----here--------')
+        print(c_token)
+        print(config['camera_detect_token']['c_token'])
         if c_token == config['camera_detect_token']['c_token']:
             if int(buf['faceid']) < 1000:
                 buf['faceurl'] = FaceImg.objects.filter(userid_id=int(buf['faceid'])).values('imgurl')[0]['imgurl']
             else:
                 buf['faceurl'] = ''
             buf['count'] = len(CameraRealtimeModel.objects.filter(cameraid=str(buf['cameraid'])).values('faceid').distinct())
+            if warning_ret:
+                print('---------hhhhiiioooo----')
+                print(warning_ret)
+                warning_ret['warning_capture_url'] = buf['imgurl']
+                warning_type_level = WarningType.objects.get(id = (WarningEvent.objects.get(id=warning_ret['warning_event_id']).warning_type_id_id)).warning_level
+                #WarningEvent.objects.get(id=warning_ret['warning_event_id'])
+                warning_ret['warning_level'] = str(warning_type_level) + '级'
+            buf['warning_info'] = warning_ret
             result_all = json.dumps(buf)
             async_to_sync(channel_layer.group_send)(c_token, {"type": "user.message", 'text': result_all})
-            #async_to_sync(channel_layer.send)(c_token, {"type": "user.message", 'text': result_all})
+        else:
+            print('hhhhhhhhhxxxxxxxx')
+            result_all = json.dumps(buf)
+            print(result_all)
+            async_to_sync(channel_layer.group_send)('token_ws', {"type": "user.message", 'text': result_all})
         return JsonResponse(data={}, code="999999", msg="成功")
 
 class CameraReal(APIView):
     def post(self,request,*args,**kwargs):
         print('hello exec detect--------------')
-        print(request.data)
         print(request.data['c_id'])
         print(request.data['c_token'])
         conf_file = settings.CONF_FILE
@@ -306,26 +334,55 @@ def getfilelist(filepath):
     return files
 
 def warning_judge(buf):
+    print('-----start judge-----')
     warningevent = WarningEvent.objects.all()
     serializer = WarningEventSerializer(warningevent, many=True)
     result_list = serializer.data
-    print(buf)
     for i in range(len(serializer.data)):
-        if(buf['cameraid'] in serializer.data[i]['warning_target_camera'].split('.') and serializer.data[i]['warning_event_flag'] == 1):
+        #print(serializer.data[i])
+        if(str(buf['cameraid']) in serializer.data[i]['warning_target_camera'].split('.') and serializer.data[i]['warning_event_flag'] == 1):
             #python没有switch语句，使用多个if判断,目标行人，目标车辆，徘徊，车流量上限等
+            warning_thing = {}
+            result = {}
             if( serializer.data[i]['warning_target_people'] != None and buf['faceid'] in serializer.data[i]['warning_target_people'].split('.') ):
-                warning_thing = {}
+                print('-----target-----')
                 warning_thing['warning_camera_id'] = buf['cameraid']
                 warning_thing['warning_video_url'] = ''
+                warning_thing['warning_capture_url'] = buf['imgurl']
+                warning_thing['warning_target_url'] = FaceImg.objects.filter(userid_id=int(buf['faceid'])).values('imgurl')[0]['imgurl']
                 warning_thing['warning_event_id'] = serializer.data[i]['id']
                 warning_thing['warning_message'] = '目标行人事件'
+                warning_thing['warning_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 warning_history_serializer = WarningHistorySerializer(data=warning_thing)
                 if warning_history_serializer.is_valid():
                     warning_history_serializer.save()
-                print(warning_thing)
+                    return warning_thing
+
+            if( serializer.data[i]['warning_target_people'] == None and serializer.data[i]['warning_target_car'] == None and
+ serializer.data[i]['warning_people_max'] == '0' and serializer.data[i]['warning_car_max'] == '0' and float(buf['c_threshold']) == 1 and int(buf['faceid']) > 1000):
+                warning_thing['warning_camera_id'] = buf['cameraid']
+                warning_thing['warning_video_url'] = ''
+                warning_thing['warning_capture_url'] = buf['imgurl']
+                warning_thing['warning_event_id'] = serializer.data[i]['id']
+                warning_thing['warning_message'] = '陌生人事件'
+                warning_thing['warning_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                warning_history_serializer = WarningHistorySerializer(data=warning_thing)
+                if warning_history_serializer.is_valid():
+                    warning_history_serializer.save()
+                    return warning_thing
+
+            print('-----default not warning-----')
+            #warning_thing['warning_camera_id'] = buf['cameraid']
+            #warning_thing['warning_video_url'] = ''
+            #warning_thing['warning_event_id'] = serializer.data[i]['id']
+            #warning_thing['warning_message'] = '陌生人事件'
+            #warning_thing['warning_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     print('------------------------------------------------')
-    result = 1
+    result = warning_thing
+    print('------------------------------------------------')
     return result
+
+
 
 cameras = CameraView.as_view()
 camera_real = CameraReal.as_view()

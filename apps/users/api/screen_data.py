@@ -1,8 +1,8 @@
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from users.common.api_response import JsonResponse
-from apps.users.models import WarningType,WarningEvent,WarningHistory,Camera,CameraStream
-from apps.users.serializers import WarningTypeSerializer,WarningEventSerializer,WarningHistorySerializer
+from apps.users.models import FaceImg,WarningType,WarningEvent,WarningHistory,Camera,CameraStream,CameraRealtime
+from apps.users.serializers import WarningTypeSerializer,WarningEventSerializer,WarningHistorySerializer,CameraRealtimeSerializer
 from apps.users.tasks import add,start,stop
 from rest_framework import serializers
 from apps.users.utility import TokenVerify
@@ -12,20 +12,73 @@ import datetime,time
 import configparser
 
 class ScreenInfoView(APIView):
-
-    @TokenVerify
-    def post(self,request,*args,**kwargs):
-        serializer = WarningTypeSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return JsonResponse(data={}, code="999999", msg="成功")
-        return JsonResponse(data=serializer.errors, code="999999", msg="失败")
-
     @TokenVerify
     def get(self,request,*args,**kwargs):
         ###获取所有预警事件类型信息###
-        print('rrrrrequest!!!!!')
-        return JsonResponse(data={'code':200}, code='999999', msg='success')
+        print('Inforrrrrequest!!!!!')
+        base_info = {}
+        base_info['warning_count'] = WarningHistory.objects.all().count()
+        base_info['camera_count'] = Camera.objects.all().count()
+        base_info['face_count'] = CameraRealtime.objects.filter(c_threshold = '1.000000').distinct().count()
+        print(base_info)
+        return JsonResponse(data={'code':200,'data':base_info}, code='999999', msg='success')
+
+class ScreenDeviceView(APIView):
+    @TokenVerify
+    def get(self,request,*args,**kwargs):
+        ###获取所有预警事件类型信息###
+        print('Devicerrrrrequest!!!!!')
+        cameralocations = list(Camera.objects.all().values('cameraLocation').distinct())
+        camera_infos = []
+        for i in range(len(cameralocations)):
+            camera_info = {}
+            camera_info['name'] = cameralocations[i]['cameraLocation']
+            camera_info['count'] = Camera.objects.filter(cameraLocation = cameralocations[i]['cameraLocation']).count()
+            camera_infos.append(camera_info)
+       
+        warningevent = WarningEvent.objects.all()
+        serializer = WarningEventSerializer(warningevent, many=True)
+        result_list = serializer.data
+        warning_infos = []
+        for i in range(len(serializer.data)):
+            warning_info = {}
+            #print(list(map(int,serializer.data[i]['warning_target_camera'].split('.'))))
+            warning_info['name'] = serializer.data[i]['warning_name']
+            warning_info['count'] = len((list(filter(lambda x : x<=10000 ,list(map(int,serializer.data[i]['warning_target_camera'].split('.')))))))
+            warning_infos.append(warning_info)
+        print(warning_infos)
+        return JsonResponse(data={'data':warning_infos,'camera':camera_infos}, code='999999', msg='success')
+
+class ScreenWarningView(APIView):
+    @TokenVerify
+    def get(self,request,*args,**kwargs):
+        ###获取所有预警事件类型信息###
+        #滚动播放,return list
+        print('Warningrrrrrequest!!!!!')
+        warninghistory = WarningHistory.objects.all()
+        serializer = WarningHistorySerializer(warninghistory, many=True)
+        
+        #target 目标人物
+        warningevent = WarningEvent.objects.filter(warning_target_people__isnull=False)
+        serializer_event = WarningEventSerializer(warningevent, many=True)
+        result_list = serializer_event.data
+        target_people = []
+        people_infos  = []
+        #这里写法待优化！！！
+        for i in range(len(result_list)):
+            for e in result_list[i]['warning_target_people'].split('.'):
+                people_info = {}
+                if e not in target_people:
+                    people_info['faceid'] = e
+                    people_info['imgurl'] = FaceImg.objects.filter(userid_id=e).values('imgurl')[0]['imgurl']
+                    target_people.append(e)
+                    people_infos.append(people_info)
+
+        #strange 陌生人抓拍
+        real_people = CameraRealtime.objects.filter(c_threshold = '1.000000').distinct().order_by('-id')[:30]
+        serializer_real = CameraRealtimeSerializer(real_people, many=True)
+        strangers = serializer_real.data
+        return JsonResponse(data={'list':serializer.data,'target':people_infos,'strange':strangers}, code='999999', msg='success')
 
 class WarningEventCtrlView(APIView):
     @TokenVerify
@@ -51,7 +104,6 @@ class WarningEventCtrlView(APIView):
 class WarningHistoryView(APIView):
     @TokenVerify
     def get(self,request,*args,**kwargs):
-        print(request.data)
         warninghistory = WarningHistory.objects.all()
         serializer = WarningHistorySerializer(warninghistory, many=True)
         for i in range(len(serializer.data)):
@@ -76,13 +128,6 @@ class WarningEventView(APIView):
     def post(self,request,*args,**kwargs):
         print("now warning event new post!!!!!!!!!!!!!!!!!!!!")
         request.data['warning_id'] = 'YJ编号' + str(int(round(time.time()*1000)))
-        #if(request.data.__contains__('warning_target_people')):
-        #    request.data['warning_target_people'] = '.'.join([str(x) for x in request.data['warning_target_people']])
-        #if(request.data.__contains__('warning_target_car')):
-        #    request.data['warning_target_car'] = '.'.join([str(x) for x in request.data['warning_target_car']])
-        #if(request.data.__contains__('warning_target_camera')):
-        #    request.data['warning_target_camera'] = '.'.join([str(x) for x in request.data['warning_target_camera']])
-             
         serializer = WarningEventSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -98,20 +143,13 @@ class WarningEventView(APIView):
 
     @TokenVerify
     def put(self,request,*args,**kwargs):
-        print('----------------put------------------')
-        print(request.data)
         if(request.data['warning_target_people'] == ""):
-            print('here1')
-            print(request.data['warning_target_people'])
             #request.data['warning_target_people'] = '.'.join([str(x) for x in request.data['warning_target_people']])
             request.data['warning_target_people'] = None
-            print(request.data['warning_target_people'])
         if(request.data['warning_target_car'] == ""):
-            print('here2')
             request.data['warning_target_car'] = None
             #request.data['warning_target_car'] = '.'.join([str(x) for x in request.data['warning_target_car']])
         if(request.data['warning_target_camera'] == ""):
-            print('here3')
             request.data['warning_target_camera'] = None
             #request.data['warning_target_camera'] = '.'.join([str(x) for x in request.data['warning_target_camera']])
         warningevent = WarningEvent.objects.get(pk = request.data['id'])
@@ -136,7 +174,6 @@ class WarningEventView(APIView):
             return JsonResponse(data=serializer.data,code='999999', msg='success')
         
         #如果默认参数里没有带id一类的，则返回全部数据，将来需要考分页及limit的限制
-        print("now warning event get !!!!!!!!!!!!!!!!!!!!!!!!!")
         warningevent = WarningEvent.objects.all()
         serializer = WarningEventSerializer(warningevent, many=True)
         result_list = serializer.data
@@ -185,5 +222,6 @@ def getfilelist(filepath):
     return files
 
 screen_info = ScreenInfoView.as_view()
-warning_event = WarningEventView.as_view()
+screen_device = ScreenDeviceView.as_view()
+screen_warning = ScreenWarningView.as_view()
 warning_event_ctrl = WarningEventCtrlView.as_view()

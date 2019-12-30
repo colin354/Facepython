@@ -53,6 +53,8 @@ urlpatterns = [
     url(r'^sys/log/login/page',log.login_record),
     url(r'^sys/log/operation/page',log.operation_record),
     url(r'^api/screenData',screen_data.screen_info),
+    url(r'^api/screenDevice',screen_data.screen_device),
+    url(r'^api/screenRight/warning',screen_data.screen_warning),
     url(r'^api/warningType',warning.warning_type),
     url(r'^api/warningEvent',warning.warning_event),
     url(r'^api/warningHistory',warning.warning_history),

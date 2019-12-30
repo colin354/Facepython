@@ -244,11 +244,11 @@ CAPTCHA_FOREGROUND_COLOR = '#0000FF'#验证码字体颜色
 
 import djcelery
 djcelery.setup_loader()
+CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 BROKER_URL = 'redis://127.0.0.1:6379/'
 CELERY_IMPORTS= ('apps.users.tasks')
 CELERYD_CONCURRENCY = 5
 CELERY_TIMEZONE = 'Asia/Shanghai'
-CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 
 CELERYBEAT_SCHEDULE = { #定时器策略
     'celery_test': {
