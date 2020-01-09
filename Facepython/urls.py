@@ -16,7 +16,7 @@ Including another URLconf
 from django.conf.urls import url, include
 from django.contrib import admin
 from rest_framework.authtoken import views
-from users.api import user,face,stream,facerecord,camera
+from users.api import user,face,stream,menu,facerecord,camera,role
 #from users.api import face
 from django.views.generic import TemplateView
 from django.conf.urls.static import static
@@ -26,10 +26,19 @@ urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^admin/', admin.site.urls),
     url(r'^api-token-auth', views.obtain_auth_token),
+    url(r'^api/list-role-of-users', role.role_of_user),
+    url(r'^api/menu', menu.all_menus),
+    url(r'^api/role-of-menu',role.role_of_menu),
+    url(r'^api/list-user-of-roles', user.user_of_role),
     url(r'^api/user/login',user.obtain_auth_token),
     url(r'^api/sys/user/info',user.user_profile),
     url(r'^api/user\/(?P<id>[0-9]+)/$',user.user_profile),
+    url(r'^api/sys/user',user.user_manage),
+    url(r'^api/user\/(?P<id>[0-9]+)/$',user.user_manage),
     url(r'^api/face',face.faces),
+    url(r'^api/role',role.role_manage),
+    url(r'^api/user/role',user.user_role_manage),
+    url(r'^api/user_role', user.user_role_manage),
     url(r'^img',face.face_img),
     url(r'^api/check', check.check_face),
     url(r'^sys/check/location', check.check_location),#可根据下面个的注释做修改

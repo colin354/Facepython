@@ -5,7 +5,55 @@ from apps.users.models import Face
 from apps.users.models import FaceImg
 from apps.users.models import Check
 from apps.users.models import Stream
-from apps.users.models import Camera,Stranger,CameraStream,PersonReid,PersonDetect,MatchUp,CameraRealtime
+from apps.users.models import Camera,Stranger,Role,CameraStream,PersonReid,PersonDetect,MatchUp,CameraRealtime,Permission, FunctionInterface,Interface, Track, Album
+from apps.users.models import UserExtraInfo
+# start test
+class TrackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Track
+        fields = ['order', 'title', 'duration']
+
+class AlbumSerializer(serializers.ModelSerializer):
+    tracks = TrackSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Album
+        fields = ['album_name', 'artist', 'tracks']
+# end test
+
+class UserExtraInfoSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = UserExtraInfo
+        exclude = ['id']
+
+class FunctionInterfaceSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = FunctionInterface
+        fields = '__all__'
+
+class InterfaceSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Interface
+        fields = '__all__'
+
+class PermissionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Permission
+        fields = '__all__'
+
+
+class RoleSerializer(serializers.ModelSerializer):
+    '''
+    角色序列化
+    '''
+    class Meta:
+        model = Role
+        fields = '__all__'
+
 
 class TokenSerializer(serializers.ModelSerializer):
     """
@@ -13,20 +61,19 @@ class TokenSerializer(serializers.ModelSerializer):
     """
     first_name = serializers.CharField(source="user.first_name")
     last_name = serializers.CharField(source="user.last_name")
-    phone = serializers.CharField(source="user.user.phone")
     email = serializers.CharField(source="user.email")
     date_joined = serializers.CharField(source="user.date_joined")
 
     class Meta:
         model = Token
-        fields = ('first_name', 'last_name', 'phone', 'email', 'key', 'date_joined')
+        fields = ('first_name', 'last_name', 'email', 'key', 'date_joined')
 
 class UserSerializer(serializers.ModelSerializer):
 
-
     class Meta:
         model = User
-        fields = ('id', 'username', 'first_name')
+        exclude = ['password', 'is_superuser']
+
 
 class FaceSerializer(serializers.ModelSerializer):
     """

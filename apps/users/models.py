@@ -1,5 +1,6 @@
-from django.contrib.auth.models import User
+# from django.contrib.auth.models import User
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
 from django.conf import settings
 from django.db.models.signals import post_save
@@ -8,21 +9,112 @@ from rest_framework.authtoken.models import Token
 
 from django.contrib import admin
 
+from django.db import models
+
+
+class Interface(models.Model):
+
+    name = models.CharField(max_length=32)
+    path = models.CharField(max_length=128)
+    method = models.CharField(max_length=32, null=True)
+    description = models.CharField(max_length=32, null=True)
+
+class FunctionInterface(models.Model):
+
+    interface = models.ForeignKey(Interface, related_name = 'Interface',null=True)
+    name = models.CharField(max_length=32, null=True)
+
+class RoleUser(models.Model):
+
+    role = models.ForeignKey("Role", null=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True)
+
+class Route(models.Model):
+
+    title = models.CharField(max_length=32, unique=True)
+    name = models.CharField(max_length=32, null=True)
+    parent = models.ForeignKey("Route", null=True, blank=True)
+    path = models.CharField(max_length=128,null=True)
+    component = models.CharField(max_length=128, null = True)
+    componentPath = models.CharField(max_length=128, null=True)
+    icon = models.CharField(max_length=128, null =True)
+    permission = models.ForeignKey("FunctionInterface", null=True, blank=True)
+    mtype = models.IntegerField(default=0)
+    sort = models.IntegerField(default=0)
+    isLock = models.BooleanField(default=True)
+
+
+class Menu(models.Model):
+    """
+    菜单
+    """
+    title = models.CharField(max_length=32, unique=True)
+    parent = models.ForeignKey("Menu", null=True, blank=True)
+    path = models.CharField(max_length=128)
+    icon = models.CharField(max_length=128, null = True)
+    permission = models.ForeignKey("FunctionInterface", null=True, blank=True)
+    mtype = models.IntegerField(null=True)
+    sort = models.IntegerField(null=True)
+    isLock = models.BooleanField(default=False)
+    index = models.IntegerField(null=True)
+    # 定义菜单间的自引用关系
+    # 权限url 在 菜单下；菜单可以有父级菜单；还要支持用户创建菜单，因此需要定义parent字段（parent_id）
+    # blank=True 意味着在后台管理中填写可以为空，根菜单没有父级菜单
+
+class Permission(models.Model):
+    """
+    权限
+    """
+    role = models.ForeignKey("Role", null=True)
+    function = models.ForeignKey("FunctionInterface", null=True)
+
+class Role(models.Model):
+    """
+    角色：绑定权限
+    """
+    name = models.CharField(max_length=32, unique=True)
+    code = models.CharField(max_length=32, unique=True)
+    description = models.CharField(max_length=512)
+
+class UserExtraInfo(models.Model):
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True)
+    icon = models.CharField(max_length=128, null = True)
+    gender = models.CharField(max_length=128, null = True)
+    real_name = models.CharField(max_length=128, null = True)
+    phone = models.CharField(max_length=128,null=True)
+
+# class User(models.Model):
+#     """
+#     用户：划分角色
+#     """
+#     user = models.OneToOneField(to=settings.AUTH_USER_MODEL)
+
+#     def __str__(self):
+#         return self.username
+
+''' 继承自带的用户表
+settings.py:
+AUTH_USER_MODEL = 'rbac.User'
+from django.contrib.auth.models import AbstractUser
+class User(AbstractUser):
+    """
+    用户：划分角色
+    """
+    username = models.CharField(verbose_name='用户', max_length=32, unique=True)
+    roles = models.ManyToManyField(verbose_name='角色', to="Role")
+    # 定义用户和角色的多对多关系
+    def __str__(self):
+        return self.username
+'''
+
+
+
+
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
         Token.objects.create(user=instance)
-
-# Create your models here.
-class UserProfile(models.Model):
-    """
-    用户
-    """
-    user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name='用户', related_name='user')
-    phone = models.CharField(max_length=11, default='', blank=True, verbose_name='手机号')
-
-    def __str__(self):
-        return self.phone
 
 
 class VerifyCode(models.Model):
@@ -51,11 +143,11 @@ class Face(models.Model):
             )
     proprietor,temporary,slack,lost = 0,1,2,3
     FACE_FLAG = (
-        (0,'proprietor'),
-        (1,'temporary'),
-        (2,'slack'),
-        (3,'lost'),
-    )
+            (0,'proprietor'),
+            (1,'temporary'),
+            (2,'slack'),
+            (3,'lost'),
+            )
 
     username = models.CharField(max_length=255, verbose_name="用户名")
     mobile = models.CharField(max_length=11, verbose_name="手机号")
@@ -121,17 +213,17 @@ class Stream(models.Model):
     """
     NEW, UPDATE, DELETE = 0, 1, 2
     FLAG_CHOICE = (
-        (0, 'new'),
-        (1, 'update'),
-        (2, 'delete'),
-    )
+            (0, 'new'),
+            (1, 'update'),
+            (2, 'delete'),
+            )
     UNHANDLE, INHANDLE, HANDLEOK, HANDLEFALSE = 0, 1, 2, 3
     STATUS_CHOICE = (
-        (0, 'unhandle'),
-        (1, 'inhandle'),
-        (2, 'handleok'),
-        (3, 'handlefalse'),
-    )
+            (0, 'unhandle'),
+            (1, 'inhandle'),
+            (2, 'handleok'),
+            (3, 'handlefalse'),
+            )
     streamname     = models.CharField(max_length=50, verbose_name="流名称", unique = True)
     streamlocation = models.CharField(max_length=100, verbose_name="流位置")
     streamurl      = models.CharField(max_length=256, verbose_name="流url")
@@ -155,9 +247,9 @@ class Camera(models.Model):
         本地摄像头库
     """
     DETECT_CHOICE = (
-        (0, 'close'),
-        (1, 'open'),
-    )
+            (0, 'close'),
+            (1, 'open'),
+            )
     cameraName     = models.CharField(max_length=256, verbose_name="摄像头名称")
     cameraLocation = models.CharField(max_length=256, verbose_name="摄像头位置")
     cameraLat      = models.CharField(max_length=24, verbose_name="纬度")
@@ -289,3 +381,22 @@ class CameraRealtime(models.Model):
     class Meta:
         verbose_name="实时监控数据"
         verbose_name_plural = verbose_name
+
+
+# test serializer
+class Album(models.Model):
+    album_name = models.CharField(max_length=100)
+    artist = models.CharField(max_length=100)
+
+class Track(models.Model):
+    album = models.ForeignKey(Album, related_name='tracks', on_delete=models.CASCADE)
+    order = models.IntegerField()
+    title = models.CharField(max_length=100)
+    duration = models.IntegerField()
+
+    class Meta:
+        unique_together = ['album', 'order']
+        ordering = ['order']
+
+    def __str__(self):
+        return '%d: %s' % (self.order, self.title)
