@@ -6,7 +6,8 @@ from apps.users.serializers import StreamSerializer
 from rest_framework import serializers
 from apps.users.utility import TokenVerify
 import cv2
-import datetime
+import datetime,time
+import pandas as pd
 
 class StreamCheck(APIView):
     def post(self, request, *args, **kwargs):
@@ -133,9 +134,6 @@ class StreamView(APIView):
                 ret = [lon/i,lat/i]
             return JsonResponse(data={'list': newlist, 'count': len(newlist),'center':ret},code='999999',msg='success')
 
-        # print("333333333333333333333333333333")
-        # print(request.GET.get('streamlocation'))
-        # print("44444444444444444444444444444")
         # if (request.GET.get('streamlocation') != None) and (request.GET.get('streamlocation') != ""):
         #     streams = Stream.objects.filter(streamlocation=request.GET['streamlocation']).values('streamlon','streamlat').distinct()
         #     return JsonResponse(data={'list': streams, 'count': len(streams)}, code='999999',
@@ -173,6 +171,7 @@ class  VideoStruct(APIView):
     def get(self, request, *args, **kwargs):
         cameralocations = Camera.objects.all().values('cameraLocation').distinct()
         newlist = []
+        start = time.time()
         for cameralocation in cameralocations:
             ret1 = {}
             ret1['label'] = cameralocation['cameraLocation']
@@ -185,31 +184,48 @@ class  VideoStruct(APIView):
                 ret3 = {}
                 # ret3['id'] = cameraname['id']
                 ret3['label'] = cameraname['cameraName']
-                camerastreams = CameraStream.objects.filter(cameraId_id=int(cameraname['id'])).values('startTime','streamUrl','id')
+                camerastreamlabels= CameraStream.objects.filter(cameraId_id=int(cameraname['id'])).values('label').distinct()
                 #ret3['children'] = list(camerastreams)
-                ret3['children'] = []
-                for camerastream in camerastreams:
-                    ret5 = []
-                    ret4 = {}
-                    match_num  = len(Check.objects.filter(streamid=str(camerastream['id'])))+len(PersonReid.objects.filter(streamid=str(camerastream['id'])))
-                    print(camerastream['startTime'])
-                    print(type(camerastream['startTime']))
-                    ret4['label'] = camerastream['startTime'] +"("+"匹配次数"+str(match_num)+")"
-                    ret4['id'] = camerastream['id']
-                    ret4['streamUrl'] = camerastream['streamUrl']
-                    ret3['children'].append(ret4)
+                ret4 = []
+                for camerastreamlabel in camerastreamlabels:
+                    ret5 = {}
+                    #match_num  = len(Check.objects.filter(streamid=str(camerastream['id'])))+len(PersonReid.objects.filter(streamid=str(camerastream['id'])))
+                    #print(camerastream['startTime'])
+                    #print(type(camerastream['startTime']))
+                    #ret4['label'] = camerastream['startTime'] +"("+"匹配次数"+str(match_num)+")"
+                    #ret4['id'] = camerastream['id']
+                    #ret4['streamUrl'] = camerastream['streamUrl']
+                    ret5['label'] = camerastreamlabel['label']
+                    ret5['children'] =[]
+                    #camerastreams = CameraStream.objects.filter(cameraId_id=int(cameraname['id'])).filter(label=camerastreamlabel['label']).values('label').values("streamUrl","startTime",'id')
+                    camerastreams = CameraStream.objects.filter(cameraId_id=int(cameraname['id'])).filter(label=camerastreamlabel['label']).values('streamUrl','startTime','id','label','faceNum','personNum')
+                    #camerastreams['count']
+                    for camerastream in camerastreams:
+                        #print(camerastream)
+                        #print('-----------------------------')
+                        ret6 ={}
+                        #match_num  = len(Check.objects.filter(streamid=str(camerastream['id'])))+len(PersonReid.objects.filter(streamid=str(camerastream['id'])))
+                        #match_num  = Check.objects.filter(streamid=str(camerastream['id'])).defer("id").count()+PersonReid.objects.filter(streamid=str(camerastream['id'])).defer("id").count()
+                        ret6['label'] = camerastream['startTime'] +"("+"人脸:"+str(camerastream['faceNum'])+" 行人:"+str(camerastream['personNum'])+")"
+                        #ret6['label'] = camerastream['startTime']
+                        ret6['id'] = camerastream['id']
+                        ret6['streamUrl'] = camerastream['streamUrl']
+                        ret5['children'].append(ret6)
                     #ret5.append(ret4)
                     #ret3['children'] = ret5
                 # ret3['streamUrl'] = streamname['streamurl']
                 # ret3['streamlng'] = []
                 # ret3['streamlng'].append([cameraname['cameraLon'], cameraname['cameraLat']])
                 # ret1['streamlng'].append([cameraname['cameraLon'], cameraname['cameraLat']])
+                    ret4.append(ret5)
+                ret3['children'] = ret4
                 ret2.append(ret3)
             ret1['children'] = ret2
             newlist.append(ret1)
-        print(newlist)
-        return JsonResponse(data={'streamList': newlist}, code='999999',
-                            msg='success')
+        end = time.time()
+        print('耗时：{0}'.format((end-start)))
+        # print(newlist)
+        return JsonResponse(data={'streamList': newlist}, code='999999', msg='success')
 
 
 stream_list = StreamView.as_view()

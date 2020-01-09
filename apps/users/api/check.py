@@ -67,7 +67,6 @@ class Check(APIView):
                     continue
                 faceids.append(face['faceid'])
                 i+=1
-                print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
                 newlist = {}
                 newlist1 = {}
                 face_id = int(face["faceid"])
@@ -78,7 +77,7 @@ class Check(APIView):
                 else:
                     newlist['facename'] = "陌生人"+face['faceid']
                     # print(CheckModel.objects.filter(faceid=face['faceid']).values('imgurl')[0]['imgurl'])
-                    newlist['faceurl']  = settings.FACE_IMG_CHECK_ROOT_URL+CheckModel.objects.filter(faceid=face['faceid']).values('imgurl')[0]['imgurl']
+                    newlist['faceurl']  = settings.FACE_IMG_REAL_ROOT_URL+CheckModel.objects.filter(faceid=face['faceid']).values('imgurl')[0]['imgurl']
                 newlist['facecount'] = len(checks.filter(faceid=face['faceid']))+len(personreids.filter(faceid=face['faceid']))
                 newlist1 = getfacemarkers(checks , personreids,face_id)
                 newlist['facetime'] =  newlist1['facetime']
@@ -265,7 +264,7 @@ def getmarkers(data,data1):
         for marker_data in res:
             if marker.time == marker_data['time']:
 
-                newlist = {'id':marker.faceid,'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl,'threshold':marker.c_threshold,}
+                newlist = {'id':marker.faceid,'imgurl':settings.FACE_IMG_REAL__ROOT_URL+marker.imgurl,'threshold':marker.c_threshold,}
                 if i < len1:
                     marker_data['imgList'].append(newlist)
                 else:
@@ -276,10 +275,10 @@ def getmarkers(data,data1):
             print('same time')
         else:
             if i < len1:
-                res.append({'time': marker.time, 'imgList':[{'id':marker.faceid,'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl,'threshold':marker.c_threshold}],'personList':[],'width':"50%"})
+                res.append({'time': marker.time, 'imgList':[{'id':marker.faceid,'imgurl':settings.FACE_IMG_REAL_ROOT_URL+marker.imgurl,'threshold':marker.c_threshold}],'personList':[],'width':"50%"})
             else:
                 res.append({'time': marker.time, 'personList': [
-                    {'id': marker.faceid, 'imgurl': settings.FACE_IMG_CHECK_ROOT_URL + marker.imgurl,
+                    {'id': marker.faceid, 'imgurl': settings.FACE_IMG_REAL_ROOT_URL + marker.imgurl,
                      'threshold': marker.c_threshold}], 'imgList': [], 'width': "50%"})
     # for marker in data1:
     #     newlist = {}
@@ -308,17 +307,17 @@ def getfacemarkers(data,reiddata,fid):
     for marker in matchs:
         newlist={}
         newlist['time'] = marker.time
-        newlist['imgurl'] = settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl
+        newlist['imgurl'] = settings.FACE_IMG_REAL_ROOT_URL+marker.imgurl
         newlist['threshold'] = marker.c_threshold
         time=marker.time
         time = [str(time),int(time)][int(time)==time]
         mark[time] =""
-        url[time] = settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl
+        url[time] = settings.FACE_IMG_REAL_ROOT_URL+marker.imgurl
         back.append(newlist)
     #给列表back按照列表内字典的time来做升序
     reback['facetime'] = sorted(back, key=lambda back:back['time'], reverse=False)
     if len(facereids):
-        reback['person_url'] = settings.FACE_IMG_CHECK_ROOT_URL+facereids[0].imgurl
+        reback['person_url'] = settings.FACE_IMG_REAL_ROOT_URL+facereids[0].imgurl
     else:
         reback['person_url'] = ''
     reback['marks'] = mark

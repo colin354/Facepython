@@ -77,6 +77,8 @@ class ScreenWarningView(APIView):
         #strange 陌生人抓拍
         real_people = CameraRealtime.objects.filter(c_threshold = '1.000000').distinct().order_by('-id')[:30]
         serializer_real = CameraRealtimeSerializer(real_people, many=True)
+        for i in range(len(serializer_real.data)):
+            serializer_real.data[i]['imgurl'] = settings.FACE_IMG_REAL_ROOT_URL + serializer_real.data[i]['imgurl']
         strangers = serializer_real.data
         return JsonResponse(data={'list':serializer.data,'target':people_infos,'strange':strangers}, code='999999', msg='success')
 

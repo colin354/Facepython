@@ -61,7 +61,7 @@ FACE_IMG_CHECK_ROOT_URL = 'http://221.231.13.230:8888'
 FACE_IMG_ROOT_URL = "http://221.231.13.230:8888/media/"
 FACE_IMG_REAL_ROOT_URL = "http://221.231.13.230:8888/record_video"
 RECORD_ROOT_URL = 'http://221.231.13.230:8888/record_media/'
-
+LOCAL_VIDEO_URL = "/mnt/public/media"
 CENTOS_IP_ROOT = 'http://172.16.3.101:8888'
 # Application definition
 INSTALLED_APPS = [

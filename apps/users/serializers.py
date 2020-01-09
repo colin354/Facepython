@@ -67,7 +67,7 @@ class StrangerSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Stranger
-        fields = ('faceid','c_gender','c_age','imgurl')
+        fields = ('id','faceid','c_gender','c_age','imgurl')
 
 
 class CameraSerializer(serializers.ModelSerializer):
@@ -85,7 +85,7 @@ class CameraStreamSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = CameraStream
-        fields = ('id','cameraId','streamUrl','streamTime','streamFps','streamStatus','startTime','label')
+        fields = ('id','cameraId','streamUrl','streamTime','endTime','streamFps','streamStatus','startTime','label','personNum','faceNum')
 
 
 # class FaceRecordSerializer(serializers.ModelSerializer):
@@ -134,7 +134,7 @@ class MatchUpSerializer(serializers.ModelSerializer):
 class CameraRealtimeSerializer(serializers.ModelSerializer):
     class Meta:
         model = CameraRealtime
-        fields = ("cameraid","c_x","c_y","c_w","c_h","c_threshold","StreamUrl","imgurl","faceid")
+        fields = ("cameraid","c_x","c_y","c_w","c_h","c_threshold","StreamUrl","imgurl","faceid","timestap")
 
 class WarningTypeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -149,7 +149,7 @@ class WarningEventSerializer(serializers.ModelSerializer):
 class WarningHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = WarningHistory
-        fields = ("id","warning_camera_id","warning_video_url","warning_event_id","warning_message","warning_time","warning_capture_url","warning_target_url")
+        fields = ("id","warning_camera_id","warning_video_url","warning_event_id","warning_message","warning_time","warning_capture_url","warning_target_url","warning_color")
 
 class LoginRecordSerializer(serializers.ModelSerializer):
     class Meta:

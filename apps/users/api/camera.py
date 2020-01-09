@@ -1,8 +1,8 @@
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from users.common.api_response import JsonResponse
-from apps.users.models import Camera,CameraStream,Face,FaceImg,WarningType,WarningEvent,WarningHistory,Stranger
-from apps.users.serializers import CameraSerializer,CameraStreamSerializer,StreamSerializer,CameraRealtimeSerializer,WarningTypeSerializer,WarningEventSerializer,StrangerSerializer
+from apps.users.models import Camera,CameraStream,Face,FaceImg,WarningType,WarningEvent,WarningHistory,Stranger,Check
+from apps.users.serializers import CameraSerializer,CameraStreamSerializer,StreamSerializer,CameraRealtimeSerializer,WarningTypeSerializer,WarningEventSerializer,StrangerSerializer,CheckSerializer
 from apps.users.serializers import WarningHistorySerializer
 from rest_framework import serializers
 from apps.users.utility import TokenVerify
@@ -11,10 +11,11 @@ from apps.users.models import CameraRealtime as CameraRealtimeModel
 from django.conf import settings
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-import os,json
+import os,json,sys
 import cv2
 import datetime,time
 import pandas as pd
+import numpy as np
 import paramiko
 import configparser
 
@@ -50,28 +51,33 @@ class CameraView(APIView):
     def get(self,request,*args,**kwargs):
         print("now camera new get!!!!!!!!!!!!!!!!!!!!")
         cameraid = request.GET.get('id')
-        cameraname = request.GET.get('cameraname')
-        print("now camera new get!!!!!!!!!!!!!!!!!!!!")
-        print(cameraid)
-        print(type(cameraid))
-        if cameraid != None and cameraid != '':
+        cameraname = request.GET.get('cameraName')
+        if cameraid != '':
             ####获取单个camera的信息修改时调用###
             print(cameraid)
             cameras = Camera.objects.get(pk=cameraid)
             serializer = CameraSerializer(cameras)
             return JsonResponse(data=serializer.data, code='999999', msg='success')
 
-        if cameraname !=None and cameraname !='':
+        if cameraname != '':
             ###查询###
-            cameras = Camera.objects.filter(cameraname__contains=cameraname)
+            print(cameraname)
+            cameras = Camera.objects.filter(cameraName__contains=cameraname)
+            print(cameraname)
             serializer = CameraSerializer(cameras,many=True)
-            return JsonResponse(data={'list': serializer.data, 'count': len(serializer.data)}, code='999999',
-                                msg='success')
+            return JsonResponse(data={'list': serializer.data, 'count': len(serializer.data)}, code='999999',msg='success')
         ###获取所有camera信息###
-        cameras = Camera.objects.all()
+        a = int(request.GET['limit'])
+        b = int(request.GET['page'])
+        start = a * (b - 1)
+        end = a * b
+        print("now camera new get!!!!!!!!!!!!!!!!!!!!---cccolin")
+        camerasall = Camera.objects.all()
+        cameras = camerasall[start:end]
         serializer = CameraSerializer(cameras, many=True)
-        return JsonResponse(data={'list': serializer.data, 'count': len(serializer.data)}, code='999999',
-                            msg='success')
+        for i in range(len(serializer.data)):
+            print(serializer.data[i]['id'])
+        return JsonResponse(data={'list': serializer.data, 'count': len(camerasall)}, code='999999', msg='success')
 
 
 
@@ -79,18 +85,10 @@ class CameraStream(APIView):
     # @TokenVerify
     def post(self,request,*args,**kwargs):
         print("now camerastream new post!!!!!!!!!!!!!!!!!!!!")
-        print(request.data)
-        # cameraid = request.data['cameraId']
-        # camera = Camera.objects.get(pk=int(cameraid))
-        # cameraid = request.data['cameraId']
         token_buf = request.data['imgurl'].split('/')[2]
         camera = Camera.objects.filter(c_token=token_buf)[0]
-        #streamurl_value = "/var/www/smartcore/"+request.data['streamUrl']
         streamurl_value = "/mnt/public/media"+request.data['imgurl']
-        #start_time = request.data['startTime']
         start_time = request.data['imgurl'].split('/')[-1].split('.')[0]
-        print(streamurl_value)
-        #start_time=datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
         cap = cv2.VideoCapture(streamurl_value)
         if cap.isOpened():  # 当成功打开视频时cap.isOpened()返回True,否则返回False
             rate = cap.get(5)  # 帧速率
@@ -100,39 +98,70 @@ class CameraStream(APIView):
             seconds = ("%.1f" % seconds)
             streamfps_value = str(rate)
             streamtime_value = str(seconds)
-            # request.data['cameraId'] = camera
+            camerareals = CameraRealtimeModel.objects.filter(StreamUrl=request.data['imgurl']).values("faceid","c_x","c_y","c_w","c_h","imgurl",'c_threshold',"cameraid","StreamUrl","timestap")
             buf = dict()
             buf['cameraId'] = camera.id
             buf['streamTime'] = streamtime_value
             buf['streamFps'] = streamfps_value
-            buf['startTime'] = start_time
+            start_time = start_time.replace("_","")
+            start_time = datetime.datetime.strptime(start_time,"%Y%m%d%H%M%S")
+            buf['startTime'] = start_time.strftime("%Y-%m-%d %H:%M:%S")
+            end_time   = request.data['end_time'].replace("_","")
+            end_time = datetime.datetime.strptime(end_time,"%Y%m%d%H%M%S")
+            buf['endTime'] = end_time.strftime("%Y-%m-%d %H:%M:%S")
+            buf['label'] = buf['startTime'].split(" ")[0]
+            buf['faceNum'] = camerareals.count()
             buf['streamUrl'] = settings.FACE_IMG_REAL_ROOT_URL + request.data['imgurl']
-            print(buf)
-            # cameraStreamModel = CameraStreamModel(cameraId=camera,streamUrl=streamurl_value,streamTime=streamtime_value,streamFps=streamfps_value,streamStatus=request.data['streamStatus'],startTime=request.data['startTime'])
-            # cameraStreamModel.save()
-            # return JsonResponse(data={}, code='999999', msg='success')
             serializers = CameraStreamSerializer(data = buf)
-            #cameraStreamModel = CameraStreamModel(streamurl=streamurl_value,cameraid =camera,streamfps = streamfps_value,streamtime = streamtime_value,streamstatus='0',starttime = start_time)
-            #print(cameraStreamModel)
             if serializers.is_valid():
                 camera_stream = serializers.save()
-                print(camera_stream)
-                camerareals = CameraRealtimeModel.objects.filter(StreamUrl=request.data['imgurl']).values("faceid","timestap","c_x","c_y","c_w","c_h",
-                                                                                                          "cameraid","StreamUrl")
-                print(type(camerareals))
+                camerareals = list(camerareals)
+                if len(camerareals):
+                    checks = getchecks(camerareals,camera_stream)
+                    serializers = CheckSerializer(data=checks,many=True)
+                    if serializers.is_valid():
+                        serializers.save()
+                        return JsonResponse(data={}, code='999999',msg='success')
+                    else:
+                        return JsonResponse(data=serializers.errors, code="999999", msg="失败")
                 return JsonResponse(data={}, code='999999',msg='success')
-            return JsonResponse(data=serializers.errors, code="999999", msg="失败")
-        return JsonResponse(data={}, code="-1", msg="failed")
+            else:
+                return JsonResponse(data=serializers.errors, code="999999", msg="失败")
+        return JsonResponse(data={}, code="-1", msg="视频文件无效")
 
     def get(self,request,*args,**kwargs):
-        print("now camerastream get !!!!!!!!!!!!!!!!!!!!!!!!!")
-        cameraid = request.GET.get('cameraId')
+        print("now camerastream get !!!!!!!!!!!!!!!!!!!!!!!!!colin---------")
+        a = int(request.GET['limit'])
+        b = int(request.GET['page'])
+        start = a * (b - 1)
+        end = a * b
+        cameraid = request.GET.get('cameraid')
         # camera = Camera.objects.get(pk = cameraid)
-        camerastreams = CameraStreamModel.objects.all()
-        camerastreams = camerastreams.filter(cameraId_id=int(cameraid))
-        print(camerastreams)
+        #camerastreams = CameraStreamModel.objects.all()
+        camerastreamsall = CameraStreamModel.objects.filter(cameraId_id=int(cameraid))
+        camerastreams = camerastreamsall[start:end]
+        #print(camerastreams)
         serializers = CameraStreamSerializer(camerastreams,many=True)
-        return JsonResponse(data=serializers.data, code='999999', msg='success')
+        return JsonResponse(data={'list':serializers.data,'count':len(camerastreamsall)}, code='999999', msg='success')
+
+    def delete(self,request,*args,**kwargs):
+        ids = request.data
+        for id in ids:
+            #删除check表中对应数据
+            checks = Check.objects.filter(streamid=id)
+            url = checks.values('url')[0]['url']
+            checks.delete()
+            #删除waringhistory表对应数据
+            warninghistorys= WarningHistory.objects.filter(warning_video_url=url).delete()
+            #更新realtime表中对应的StreamUrl字段
+            realtimes = CameraRealtime.objects.filter(StreamUrl=url).update(StreamUrl=null)
+            #删除camerastream表中记录
+            camerars= CameraStreamModel.objects.get(id=id).delete()
+            #删除视频文件
+            src_video=settings.LOCAL_VIDEO_URL+url
+            if os.path.exists(src_video):
+                os.remove(src_video)
+        return JsonResponse(data={}, code='999999', msg='成功')
 
 class CameraRecord(APIView):
     def post(self,request,*args,**kwargs):
@@ -225,26 +254,22 @@ class CameraRecordForCS(APIView):
 
 class CameraWS(APIView):
     def post(self,request,*args,**kwargs):
-        print("now cameraws")
-        print(request.data)
+        print("now cameraws -------- from other mechine!!!!")
         buf = request.data.copy()
         print(buf)
-        #buf['cameraid'] = str(Camera.objects.filter(c_ip= buf['cameraip']).values('id')[0]['id'])a
-        if buf["c_threshold"] == "1":
+        #buf['cameraid'] = str(Camera.objects.filter(c_ip= buf['cameraip']).values('id')[0]['id'])
+        if int(float(buf["c_threshold"])) == 1 and int(buf['faceid']) > 1000:
             serializer = StrangerSerializer(data=buf)
             if serializer.is_valid():
                 serializer.save()
             else:
                 return JsonResponse(data=serializer.errors,code='999999',msg="failed")
-        buf['imgurl'] = settings.FACE_IMG_REAL_ROOT_URL+buf['imgurl']
-        print(buf['imgurl'])
+        #buf['imgurl'] = settings.FACE_IMG_REAL_ROOT_URL+buf['imgurl']
         token_buf = buf['url'].split('/')[-1]
-        print(token_buf)
         buf['cameraid'] = Camera.objects.filter(c_token = token_buf).values("id")[0]['id']
         warning_ret = []
         warning_ret = warning_judge(buf)
         serializer = CameraRealtimeSerializer(data=buf)
-        print(serializer)
         if serializer.is_valid():
             serializer.save()
         channel_layer = get_channel_layer()
@@ -264,18 +289,18 @@ class CameraWS(APIView):
             buf['count'] = len(CameraRealtimeModel.objects.filter(cameraid=str(buf['cameraid'])).values('faceid').distinct())
             if warning_ret:
                 print('---------hhhhiiioooo----')
-                print(warning_ret)
-                warning_ret['warning_capture_url'] = buf['imgurl']
+                #print(warning_ret)
+                warning_ret['warning_capture_url'] = settings.FACE_IMG_REAL_ROOT_URL +buf['imgurl']
                 warning_type_level = WarningType.objects.get(id = (WarningEvent.objects.get(id=warning_ret['warning_event_id']).warning_type_id_id)).warning_level
                 #WarningEvent.objects.get(id=warning_ret['warning_event_id'])
                 warning_ret['warning_level'] = str(warning_type_level) + '级'
             buf['warning_info'] = warning_ret
+            buf['imgurl'] = settings.FACE_IMG_REAL_ROOT_URL+buf['imgurl']
             result_all = json.dumps(buf)
             async_to_sync(channel_layer.group_send)(c_token, {"type": "user.message", 'text': result_all})
         else:
             print('hhhhhhhhhxxxxxxxx')
             result_all = json.dumps(buf)
-            print(result_all)
             async_to_sync(channel_layer.group_send)('token_ws', {"type": "user.message", 'text': result_all})
         return JsonResponse(data={}, code="999999", msg="成功")
 
@@ -296,6 +321,24 @@ class CameraReal(APIView):
         config["camera_detect_token"] = request.data
         config.write(open(conf_file,mode='w'))
         return JsonResponse(data={'e':''}, code="999999", msg="成功")
+
+def getchecks(lists,serializer):
+    print("now turn date to checks")
+    print(serializer.id)
+    check_frame= pd.DataFrame(lists)
+    #print(check_frame)
+    num = float(serializer.streamFps)
+    check_frame['streamid'] = str(serializer.id)
+    check_frame['timestap'] = check_frame['timestap'].astype(float)
+    check_frame['time'] = check_frame['timestap']/num
+    #print(check_frame)
+    check_frame['timestap'] = check_frame['timestap'].astype(str)
+    check_frame['url'] = check_frame['StreamUrl']
+    #print(check_frame)
+    check_frame = check_frame.to_dict(orient="records")
+    #print(check_frame)
+    return check_frame
+
 
 def rtsp_result(c_token,hostname,port,username,password,private,tail):
     channel_layer = get_channel_layer()
@@ -339,7 +382,7 @@ def warning_judge(buf):
     serializer = WarningEventSerializer(warningevent, many=True)
     result_list = serializer.data
     for i in range(len(serializer.data)):
-        #print(serializer.data[i])
+        print(serializer.data[i])
         if(str(buf['cameraid']) in serializer.data[i]['warning_target_camera'].split('.') and serializer.data[i]['warning_event_flag'] == 1):
             #python没有switch语句，使用多个if判断,目标行人，目标车辆，徘徊，车流量上限等
             warning_thing = {}
@@ -347,11 +390,12 @@ def warning_judge(buf):
             if( serializer.data[i]['warning_target_people'] != None and buf['faceid'] in serializer.data[i]['warning_target_people'].split('.') ):
                 print('-----target-----')
                 warning_thing['warning_camera_id'] = buf['cameraid']
-                warning_thing['warning_video_url'] = ''
+                warning_thing['warning_video_url'] = buf['StreamUrl']
                 warning_thing['warning_capture_url'] = buf['imgurl']
                 warning_thing['warning_target_url'] = FaceImg.objects.filter(userid_id=int(buf['faceid'])).values('imgurl')[0]['imgurl']
                 warning_thing['warning_event_id'] = serializer.data[i]['id']
                 warning_thing['warning_message'] = '目标行人事件'
+                warning_thing['warning_color'] = 1
                 warning_thing['warning_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 warning_history_serializer = WarningHistorySerializer(data=warning_thing)
                 if warning_history_serializer.is_valid():
@@ -360,11 +404,13 @@ def warning_judge(buf):
 
             if( serializer.data[i]['warning_target_people'] == None and serializer.data[i]['warning_target_car'] == None and
  serializer.data[i]['warning_people_max'] == '0' and serializer.data[i]['warning_car_max'] == '0' and float(buf['c_threshold']) == 1 and int(buf['faceid']) > 1000):
+                print('-----stranger!!!!!!!-----')
                 warning_thing['warning_camera_id'] = buf['cameraid']
-                warning_thing['warning_video_url'] = ''
+                warning_thing['warning_video_url'] = buf['StreamUrl']
                 warning_thing['warning_capture_url'] = buf['imgurl']
                 warning_thing['warning_event_id'] = serializer.data[i]['id']
                 warning_thing['warning_message'] = '陌生人事件'
+                warning_thing['warning_color'] = 2
                 warning_thing['warning_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 warning_history_serializer = WarningHistorySerializer(data=warning_thing)
                 if warning_history_serializer.is_valid():
@@ -379,7 +425,6 @@ def warning_judge(buf):
             #warning_thing['warning_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     print('------------------------------------------------')
     result = warning_thing
-    print('------------------------------------------------')
     return result
 
 

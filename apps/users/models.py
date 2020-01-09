@@ -167,6 +167,7 @@ class Camera(models.Model):
     c_password     = models.CharField(max_length=100, null = True ,verbose_name="摄像头密码")
     c_token        = models.CharField(max_length=24, null = True ,verbose_name="摄像头token")
     c_detectStatus = models.IntegerField(choices=DETECT_CHOICE, default=0 ,verbose_name="摄像头检测状态")
+    warning_event  = models.CharField(max_length=256,null=True,verbose_name='预警事件编号')
 
     class Meta:
         verbose_name = "摄像头信息"
@@ -178,9 +179,11 @@ class CameraStream(models.Model):
     streamFps = models.CharField(max_length=256, null=True, blank=True, verbose_name="流fps")
     streamStatus = models.CharField(max_length=256, null=True, blank=True, verbose_name="流status")
     startTime = models.CharField(max_length=256, null=True, blank=True, verbose_name="流time")
+    endTime = models.CharField(max_length=256, null=True, blank=True, verbose_name="结束time")
     cameraId = models.ForeignKey('Camera', on_delete=models.CASCADE)
     label = models.CharField(max_length=256, null=True, blank=True, verbose_name="时间")
-
+    faceNum   = models.IntegerField(default=0,null=True, blank=True, verbose_name='人脸识别数')
+    personNum   = models.IntegerField(default=0,null=True, blank=True, verbose_name='行人识别数')
 
     class Meta:
         verbose_name = "录像信息"
@@ -285,7 +288,7 @@ class CameraRealtime(models.Model):
     imgurl = models.CharField(max_length=200, null=True, verbose_name="图片url")
     faceid = models.CharField(max_length=10, verbose_name='人员ID')
     #c_token = models.CharField(max_length=24, null=True, verbose_name="摄像头token")
-    #timestap = models.CharField(max_length=100, verbose_name="时间戳")
+    timestap = models.CharField(max_length=10, null=True, blank=True, verbose_name="时间戳")
 
     class Meta:
         verbose_name="实时监控数据"
@@ -327,6 +330,14 @@ class WarningEvent(models.Model):
         verbose_name_plural = verbose_name
   
 class WarningHistory(models.Model):
+    WARNING_LEVEL = (
+        (0, 'Ⅰ 级'),
+        (1, 'Ⅱ 级'),
+        (2, 'Ⅲ 级'),
+        (3, 'Ⅳ 级'),
+        (4, 'Ⅴ 级'),
+    )
+    warning_color         = models.IntegerField(choices=WARNING_LEVEL, default=0 ,verbose_name='预警级别颜色')
     warning_camera_id     = models.CharField(max_length=100, null=True, blank=True, verbose_name='预警摄像头')
     warning_time          = models.DateTimeField(auto_now_add=True,verbose_name='预警发生时间')
     warning_video_url     = models.CharField(max_length=150, null=True, blank=True, verbose_name='预警视频url')

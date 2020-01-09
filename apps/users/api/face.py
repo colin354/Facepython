@@ -10,6 +10,7 @@ from rest_framework.parsers import JSONParser
 from apps.users.utility import TokenVerify,OperationLog
 from apps.users.models import FaceImg as FaceImgModel
 from apps.users.models import Face as FaceModel
+from apps.users.models import Stranger
 import os, shutil
 import pdb
 
@@ -303,7 +304,6 @@ class FaceView(APIView):
 
 
 class StrangerView(APIView):
-
     def post(self,request,*args,**kwargs):
         print("now stranger new post!!!!!!!!!!!!!!!!!!!!")
         print(request.data)
@@ -314,6 +314,31 @@ class StrangerView(APIView):
             serializer.save()
             return JsonResponse(data={}, code="999999", msg="成功")
         return JsonResponse(data=serializer.errors, code="999999", msg="失败")
+    
+    @TokenVerify
+    def get(self, request, *args, **kwargs):
+        print('get stanger')
+        a = int(request.GET['limit'])
+        b = int(request.GET['page'])
+        start = a * (b - 1)
+        end = a * b
+        strangerall = Stranger.objects.all().order_by('id')
+        strangers = strangerall[start:end]        
+        serializer = StrangerSerializer(strangers, many=True)
+        for i in range(len(serializer.data)):
+            serializer.data[i]['faceid'] = '陌生人' + str(serializer.data[i]['faceid'])
+            serializer.data[i]['imgurl'] = settings.FACE_IMG_REAL_ROOT_URL + serializer.data[i]['imgurl']
+        return JsonResponse(data={'list': serializer.data, 'count': len(strangerall)}, code='999999', msg='success')
+
+    @TokenVerify
+    def delete(self,request,*args,**kwargs):
+        print('delete!!!-------')
+        ids = request.data
+        print(ids)
+        for id in ids:
+            stranger = Stranger.objects.get(id=id).delete()
+        return JsonResponse(data={}, code='999999', msg='成功')
+
 
 face_list = FaceListView.as_view()
 face_img = FaceImg.as_view()
