@@ -16,8 +16,14 @@ class ScreenInfoView(APIView):
     def get(self,request,*args,**kwargs):
         ###获取所有预警事件类型信息###
         print('Inforrrrrequest!!!!!')
+        now = datetime.datetime.now()  #获取现在的时间
+        #start = datetime.timedelta(hours=23,minutes=59,seconds=59)   #获取当前时间中的一天内的开始时间
+        start = datetime.datetime.now().date()   #获取当前时间中的一天内的开始时间
+        print(now)
+        print(start)
         base_info = {}
-        base_info['warning_count'] = WarningHistory.objects.all().count()
+        #base_info['warning_count'] = WarningHistory.objects.all().count()
+        base_info['warning_count'] = WarningHistory.objects.filter(warning_time__gte=datetime.datetime.now().date()).count()
         base_info['camera_count'] = Camera.objects.all().count()
         base_info['face_count'] = CameraRealtime.objects.filter(c_threshold = '1.000000').distinct().count()
         print(base_info)
@@ -55,9 +61,14 @@ class ScreenWarningView(APIView):
         ###获取所有预警事件类型信息###
         #滚动播放,return list
         print('Warningrrrrrequest!!!!!')
-        warninghistory = WarningHistory.objects.all()
+        warninghistory = WarningHistory.objects.filter(warning_time__gte=datetime.datetime.now().date())
+        #warninghistory = WarningHistory.objects.all()
         serializer = WarningHistorySerializer(warninghistory, many=True)
-        
+        for i in range(len(serializer.data)):
+            serializer.data[i]['warning_camera_name'] = Camera.objects.get(pk=int(serializer.data[i]['warning_camera_id'])).cameraName       
+            serializer.data[i]['warning_time'] = serializer.data[i]['warning_time'][0:19]
+            #print(type(serializer.data[i]['warning_time']))
+
         #target 目标人物
         warningevent = WarningEvent.objects.filter(warning_target_people__isnull=False)
         serializer_event = WarningEventSerializer(warningevent, many=True)

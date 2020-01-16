@@ -91,6 +91,7 @@ class WarningHistoryView(APIView):
             for i in range(len(serializer.data)):
                 warningevent = WarningEvent.objects.get(pk=int(serializer.data[i]['warning_event_id']))
                 warningtype = WarningType.objects.get(pk=int(warningevent.warning_type_id_id))
+                serializer.data[i]['warning_camera_name'] = Camera.objects.get(pk=int(serializer.data[i]['warning_camera_id'])).cameraName
                 serializer.data[i]['warning_type']  = warningtype.warning_type
                 serializer.data[i]['warning_level'] = str(warningtype.warning_level) + '级'
                 #serializer.data[i]['warning_color'] = warningtype.warning_level
@@ -116,10 +117,13 @@ class WarningHistoryView(APIView):
             warninghistory = warninghistoryall[start:end]
         serializer = WarningHistorySerializer(warninghistory, many=True)
         for i in range(len(serializer.data)):
+            print(serializer.data[i]['warning_time'])
             warningevent = WarningEvent.objects.get(pk=int(serializer.data[i]['warning_event_id']))
             warningtype = WarningType.objects.get(pk=int(warningevent.warning_type_id_id))
+            serializer.data[i]['warning_camera_name'] = Camera.objects.get(pk=int(serializer.data[i]['warning_camera_id'])).cameraName
             serializer.data[i]['warning_type']  = warningtype.warning_type
             serializer.data[i]['warning_level'] = warningtype.warning_level
+            #serializer.data[i]['warning_time'] = serializer.data[i]['warning_time'].substr(0, 19).replace("T", " ")
             #serializer.data[i]['warning_color'] = warningtype.warning_level
             serializer.data[i]['warning_name'] = warningevent.warning_name
             serializer.data[i]['warning_id'] = warningevent.warning_id

@@ -145,22 +145,28 @@ class CameraStream(APIView):
         return JsonResponse(data={'list':serializers.data,'count':len(camerastreamsall)}, code='999999', msg='success')
 
     def delete(self,request,*args,**kwargs):
+        print("delete test")
         ids = request.data
         for id in ids:
+            camerastream= CameraStreamModel.objects.get(id=id)
+            streamurl = camerastream.streamUrl
+            url = '/'+streamurl.strip(settings.FACE_IMG_REAL_ROOT_URL)
+            print(url)
             #删除check表中对应数据
-            checks = Check.objects.filter(streamid=id)
-            url = checks.values('url')[0]['url']
-            checks.delete()
+            checks = Check.objects.filter(streamid=id).delete()
             #删除waringhistory表对应数据
             warninghistorys= WarningHistory.objects.filter(warning_video_url=url).delete()
             #更新realtime表中对应的StreamUrl字段
-            realtimes = CameraRealtime.objects.filter(StreamUrl=url).update(StreamUrl=null)
+            realtimes = CameraRealtimeModel.objects.filter(StreamUrl=url).update(StreamUrl='')
+            #if(realtimes):
+             #   realtimes.update(StreamUrl=null)
             #删除camerastream表中记录
-            camerars= CameraStreamModel.objects.get(id=id).delete()
+            camerastream.delete()
             #删除视频文件
             src_video=settings.LOCAL_VIDEO_URL+url
             if os.path.exists(src_video):
                 os.remove(src_video)
+                print("555555555555")
         return JsonResponse(data={}, code='999999', msg='成功')
 
 class CameraRecord(APIView):

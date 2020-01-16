@@ -12,7 +12,7 @@ from apps.users.models import MatchUp as MatchUpModel
 from collections import OrderedDict
 from itertools import chain
 
-import random
+import random,json
 
 from apps.users.models import CameraStream as CameraStreamModel
 from apps.users.models import Camera as CameraModel
@@ -49,7 +49,7 @@ class Check(APIView):
         #如果只有streamid,没有faceid
         if (faceid =='None' or faceid == '') and (streamid != 'None' and streamid != ''):
             print("---------Only-----streamid--------------")
-            checks = CheckModel.objects.filter(streamid=streamid)
+            checks = CheckModel.objects.filter(streamid=streamid) #流
             personreids = PersonReidModel.objects.filter(streamid = streamid)
             checkids1 = checks.values('faceid').distinct()
             checkids2 = personreids.values('faceid').distinct()
@@ -70,7 +70,6 @@ class Check(APIView):
                 newlist = {}
                 newlist1 = {}
                 face_id = int(face["faceid"])
-                print(face_id)
                 if face_id < 1000:
                     newlist['facename'] = FaceModel.objects.get(pk=face_id).username
                     newlist['faceurl']  = FaceImgModel.objects.filter(userid = face_id).values('imgurl')[0]['imgurl']
@@ -87,11 +86,14 @@ class Check(APIView):
                 ret.append(newlist)
                 print(i)
             # print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+            print("---------5--------------")
             newlist = {}
             newlist['streamname'] = name
             newlist['streamtime'] = streamtime
             newlist['facematch'] = ret
+            print("---------6--------------")
             serializer1 =getmarkers(list(checks),list(personreids))
+            print("---------7--------------")
             #serializer2 = getmarkers(personreids)
             serializer2 = {}
             return JsonResponse(data={'list': serializer1, 'count': len(serializer1) , 'info':newlist,'list_reid':serializer2}, code='999999',
@@ -254,7 +256,9 @@ class CheckLocations(APIView):
 def getmarkers(data,data1):
     res = []
     len1 =len(data)
+    print("66---------(1)--------------")
     data = data+data1
+    print("66---------(2)--------------")
     for i,marker in enumerate(data):
         newlist = {}
         # if i < len1:
@@ -263,14 +267,13 @@ def getmarkers(data,data1):
         #     flag = "1"
         for marker_data in res:
             if marker.time == marker_data['time']:
-
-                newlist = {'id':marker.faceid,'imgurl':settings.FACE_IMG_REAL__ROOT_URL+marker.imgurl,'threshold':marker.c_threshold,}
+                newlist = {'id':marker.faceid,'imgurl':settings.FACE_IMG_REAL_ROOT_URL+marker.imgurl,'threshold':marker.c_threshold,}
                 if i < len1:
                     marker_data['imgList'].append(newlist)
                 else:
                     marker_data['personList'].append(newlist)
-
                 break
+
         if newlist:
             print('same time')
         else:
@@ -292,7 +295,6 @@ def getmarkers(data,data1):
     #     else:
     #         res.append({'time': marker.time, 'imgList':[{'id':marker.faceid,'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+marker.imgurl,'threshold':marker.c_threshold,'flag':"1"}],
     #                         'width':"50%"})
-
     return res
 
 def getfacemarkers(data,reiddata,fid):
@@ -304,6 +306,7 @@ def getfacemarkers(data,reiddata,fid):
     mark = {}
     url = {}
     reback = {}
+    style = '{"style":{"color":"#FF2D2D"},"label":"1s"}'
     for marker in matchs:
         newlist={}
         newlist['time'] = marker.time
@@ -311,7 +314,7 @@ def getfacemarkers(data,reiddata,fid):
         newlist['threshold'] = marker.c_threshold
         time=marker.time
         time = [str(time),int(time)][int(time)==time]
-        mark[time] =""
+        mark[time] = ''
         url[time] = settings.FACE_IMG_REAL_ROOT_URL+marker.imgurl
         back.append(newlist)
     #给列表back按照列表内字典的time来做升序
@@ -322,6 +325,7 @@ def getfacemarkers(data,reiddata,fid):
         reback['person_url'] = ''
     reback['marks'] = mark
     reback['url'] = url
+    print(reback)
     return reback
 
 

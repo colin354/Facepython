@@ -147,6 +147,7 @@ class WarningEventSerializer(serializers.ModelSerializer):
         fields = ("id","warning_id","warning_name","warning_type_id","warning_people_max","warning_car_max","warning_target_people","warning_target_car","warning_target_camera","warning_event_flag","warning_event_time")
 
 class WarningHistorySerializer(serializers.ModelSerializer):
+    warning_time = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S')
     class Meta:
         model = WarningHistory
         fields = ("id","warning_camera_id","warning_video_url","warning_event_id","warning_message","warning_time","warning_capture_url","warning_target_url","warning_color")
