@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from users.common.api_response import JsonResponse
 from apps.users.models import Camera,WarningType,WarningEvent,WarningHistory,Face
 from apps.users.serializers import WarningTypeSerializer,WarningEventSerializer,WarningHistorySerializer
-from apps.users.tasks import add,start,stop
+from apps.users.tasks import add,start,stop,do_train
 from rest_framework import serializers
 from apps.users.utility import TokenVerify
 from django.conf import settings
@@ -61,20 +61,26 @@ class WarningEventCtrlView(APIView):
     def post(self,request,*args,**kwargs):
         warningevent = WarningEvent.objects.get(pk = request.data['params']['id'])
         print(type(warningevent))
-        print(warningevent.warning_target_camera)
         ret = ''
+        result = ''
         if(request.data['params']['start']):
             warningevent.warning_event_flag = 1
             warningevent.warning_event_time = datetime.datetime.now()
             warningevent.save()
             ret = start(warningevent)
-            result = add(1,2)
+            print('-----eee----------')
+            result1 = do_train.apply_async(args=[1,21], queue="train", routing_key="train")
+            #re_data = result1.get()
+            #print(re_data)
         else:
             warningevent.warning_event_flag = 0
             warningevent.warning_event_time = datetime.datetime.now()
             warningevent.save()
             ret = stop(warningevent)
-            result = add(2,2)
+            print('-----eee----------')
+            result1 = do_train.apply_async(args=[3,4], queue="train", routing_key="train")
+            print(result1)
+            #re_data = result1.get()
         return JsonResponse(data={'result':result,'ret':ret}, code="999999", msg="成功")
 
 class WarningHistoryView(APIView):
@@ -252,6 +258,8 @@ class WarningEventView(APIView):
                 serializer.data[i]['warning_target_camera_num'] = 0
                 
         #print(result_list['warning_type_id'])
+        #result1 = do_train.apply_async(args=[1,21], queue="train", routing_key="train")
+        #re_data = result1.get()
         return JsonResponse(data={'list': serializer.data, 'count': len(serializer.data)}, code='999999',
                             msg='success')
 

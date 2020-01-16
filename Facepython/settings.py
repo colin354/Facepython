@@ -131,7 +131,7 @@ DATABASES = {
         'NAME': 'huiwen',
         'USER': 'root',
         'PASSWORD': 'vue_face',
-        'HOST': '127.0.0.1',
+        'HOST': '172.16.3.101',
         'PORT': '3306',
         'OPTIONS': { 'init_command': 'SET default_storage_engine=INNODB; SET sql_mode= STRICT_TRANS_TABLES; ' }
     }
@@ -243,12 +243,26 @@ CAPTCHA_BACKGROUND_COLOR = '#FFFAFA'#验证码背景颜色
 CAPTCHA_FOREGROUND_COLOR = '#0000FF'#验证码字体颜色
 
 import djcelery
+from kombu import Queue,Exchange
 djcelery.setup_loader()
-CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
-BROKER_URL = 'redis://127.0.0.1:6379/'
+#BROKER_URL = 'redis://127.0.0.1:6379/'
+BROKER_URL = 'amqp://colin:123456@172.16.3.115:5672/testhost'
+CERERY_RESULT_BACKEND = 'amqp://colin:123456@172.16.3.115:5672/testhost'
+CELERY_TASK_RESULT_EXPIRES=3600
+CELERY_TASK_SERIALIZER='json'
+CELERY_RESULT_SERIALIZER='json'
+CELERY_DEFAULT_EXCHANGE = 'train'
+CELERY_DEFAULT_EXCHANGE_TYPE = 'direct'
+
 CELERY_IMPORTS= ('apps.users.tasks')
 CELERYD_CONCURRENCY = 5
 CELERY_TIMEZONE = 'Asia/Shanghai'
+
+CELERY_QUEUES = (
+    Queue('train', routing_key='train'),
+    Queue('predict', routing_key='predict'),
+    Queue('for_task_video_concentration', routing_key='for_task_video_concentration'),
+)
 
 CELERYBEAT_SCHEDULE = { #定时器策略
     'celery_test': {
