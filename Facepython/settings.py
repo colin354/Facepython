@@ -128,7 +128,7 @@ CHANNEL_LAYERS = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'vue_face',
+        'NAME': 'huiwen',
         'USER': 'root',
         'PASSWORD': 'vue_face',
         'HOST': '127.0.0.1',
