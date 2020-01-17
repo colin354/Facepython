@@ -28,7 +28,7 @@ sys.path.insert(0,os.path.join(BASE_DIR,'extra_apps'))
 SECRET_KEY = '6+2ro69sh_^2=(g@xlm@!=jc#j@fj!^&t=-rq0$kyf75_e8%zl'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 #ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.17.1.*', '192.17.1.150']
 #ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.1.14', '192.168.1.*']
@@ -131,7 +131,7 @@ DATABASES = {
         'NAME': 'huiwen',
         'USER': 'root',
         'PASSWORD': 'vue_face',
-        'HOST': '172.16.3.101',
+        'HOST': '127.0.0.1',
         'PORT': '3306',
         'OPTIONS': { 'init_command': 'SET default_storage_engine=INNODB; SET sql_mode= STRICT_TRANS_TABLES; ' }
     }
@@ -226,10 +226,6 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PAGINATION_CLASS': (
         'rest_framework.pagination.PageNumberPagination',
-    ),
-    'EXCEPTION_HANDLER': (
-        #'api_test.common.common.custom_exception_handler'
-        # 'EXCEPTION_HANDLER': 'my_project.my_app.utils.custom_exception_handler'
     )
 }
 
