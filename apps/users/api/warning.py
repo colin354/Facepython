@@ -155,12 +155,13 @@ class WarningEventView(APIView):
         if request.data['warning_target_camera']:
             camera_ids = request.data['warning_target_camera'].split('.')
             for camera_id in list(camera_ids):
-                camera = Camera.objects.get(id=int(camera_id))
-                if camera.warning_event == None or camera.warning_event == '':
-                    camera.warning_event = request.data['warning_id'] + '.'
-                else:
-                    camera.warning_event = camera.warning_event + request.data['warning_id'] + '.'
-                camera.save()
+                if int(camera_id) < 10000: 
+                    camera = Camera.objects.get(id=int(camera_id))
+                    if camera.warning_event == None or camera.warning_event == '':
+                        camera.warning_event = request.data['warning_id'] + '.'
+                    else:
+                        camera.warning_event = camera.warning_event + request.data['warning_id'] + '.'
+                    camera.save()
         print("now warning event new post!!!!!!!!!!!!!!!!!!!!")
         if serializer.is_valid():
             serializer.save()
@@ -224,7 +225,7 @@ class WarningEventView(APIView):
             return JsonResponse(data=serializer.data,code='999999', msg='success')
         
         #如果默认参数里没有带id一类的，则返回全部数据，将来需要考分页及limit的限制
-        print("now warning event get !!!!!!!!!!!!!!!!!!!!!!!!!")
+        print("1,,.,now warning event get !!!!!!!!!!!!!!!!!!!!!!!!!")
         warningevent = WarningEvent.objects.all()
         serializer = WarningEventSerializer(warningevent, many=True)
         result_list = serializer.data
