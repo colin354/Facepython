@@ -1,9 +1,9 @@
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from users.common.api_response import JsonResponse
-from apps.users.models import Camera,CameraStream,Face,FaceImg,WarningType,WarningEvent,WarningHistory,Stranger,Check
+from apps.users.models import Camera,CameraStream,Face,FaceImg,WarningType,WarningEvent,WarningHistory,Stranger,Check,Pedestrian
 from apps.users.serializers import CameraSerializer,CameraStreamSerializer,StreamSerializer,CameraRealtimeSerializer,WarningTypeSerializer,WarningEventSerializer,StrangerSerializer,CheckSerializer
-from apps.users.serializers import WarningHistorySerializer
+from apps.users.serializers import WarningHistorySerializer,PedestrianSerializer
 from rest_framework import serializers
 from apps.users.utility import TokenVerify
 from apps.users.models import CameraStream as CameraStreamModel
@@ -17,7 +17,7 @@ import datetime,time
 import pandas as pd
 import numpy as np
 import paramiko
-import configparser
+import configparser,re
 
 class CameraView(APIView):
 
@@ -310,6 +310,70 @@ class CameraWS(APIView):
             async_to_sync(channel_layer.group_send)('token_ws', {"type": "user.message", 'text': result_all})
         return JsonResponse(data={}, code="999999", msg="成功")
 
+class CameraPedestrian(APIView):
+    def post(self,request,*args,**kwargs):
+        print("now post pedestrian!")
+        print(request.data)
+        buf = request.data.copy()
+        camera = Camera.objects.filter(c_ip=buf['c_ip'])[0]
+        buf['cameraName'] = camera.cameraName
+        buf['color'] = camera.color
+        buf['message']="出现行人"
+        buf['imgurl'] = settings.RECORD_IMG+buf['imgurl']
+        #优化时间显示
+        buf['datetime'] = re.sub("\D","",buf['datetime'])
+        buf['datetime'] = datetime.datetime.strptime(buf['datetime'],'%Y%m%d%H%M%S')
+        buf['datetime'] = datetime.datetime.strftime(buf['datetime'],'%Y-%m-%d %H:%M:%S')
+        serializer = PedestrianSerializer(data=buf)
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            return JsonResponse(data=serializer.errors,code='999999',msg="failed")
+        print("continue")
+        channel_layer = get_channel_layer()
+        try:
+            result_all = json.dumps(buf)
+            print("---------------1---------------------")
+            print(result_all)
+            async_to_sync(channel_layer.group_send)('001',{"type": "user.message", 'text': result_all})
+            print("---------------2---------------------")
+        except Exception:
+            print("----------------------3------------------")
+            JsonResponse(data="无socket连接",code="999999",msg="failed")
+        return JsonResponse(data={},code="999999",msg="success")
+
+    def get(self,request,*args,**kwargs):
+        print("pedestrian get")
+        print(request.data)
+        cameraname = request.GET.get("queryName")
+        a = request.GET.get('limit')
+        b = request.GET.get('page')
+        if cameraname:
+            pedestrians = Pedestrian.objects.filter(cameraName__contains=cameraname)
+        else:    
+            pedestrians = Pedestrian.objects.all()
+        count = len(pedestrians)
+        start = 0
+        end = 3
+        if a and b:
+            a = int(a)
+            b = int(b)
+            start = a * (b - 1)
+            end = a * b
+        pedestrian_limit = pedestrians[start:end]
+        serializers = PedestrianSerializer(pedestrian_limit,many=True)
+        return JsonResponse(data={'list':serializers.data,'count':count},code="999999",msg='success')
+    
+
+    def delete(self,request,*args,**kwargs):
+        pedestrian_ids = request.data
+        result = Pedestrian.objects.filter(id__in=pedestrian_ids)
+        try:
+            result.delete()
+            return JsonResponse(data={},code="999999",msg='success')
+        except Exception:
+            return JsonResponse(data={},code="999999",msg="failed")
+
 class CameraReal(APIView):
     def post(self,request,*args,**kwargs):
         print('hello exec detect--------------')
@@ -441,3 +505,4 @@ camera_ws = CameraWS.as_view()
 camera_stream = CameraStream.as_view()
 camera_record = CameraRecord.as_view()
 camera_record_for_cs = CameraRecordForCS.as_view()
+camera_pedestrian = CameraPedestrian.as_view()

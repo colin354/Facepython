@@ -47,6 +47,8 @@ urlpatterns = [
     url(r'^sys/camerareal', camera.camera_real),
     url(r'^sys/cameraws', camera.camera_ws),
     url(r'^sys/camerarecord', camera.camera_record_for_cs),
+    #新增小区隔离管控
+    url(r'^sys/camera_pedestrian_ws',camera.camera_pedestrian),
     url(r'^sys/cameras',camera.cameras),
     url(r'^sys/check',check.check_track),
     url(r'^sys/detect_ctl',detect_ctl.detect),

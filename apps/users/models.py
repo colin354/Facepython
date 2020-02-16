@@ -158,17 +158,17 @@ class Camera(models.Model):
         (0, 'close'),
         (1, 'open'),
     )
-    cameraName     = models.CharField(max_length=256, verbose_name="摄像头名称")
+    cameraName     = models.CharField(max_length=100, verbose_name="摄像头名称")
     cameraLocation = models.CharField(max_length=256, verbose_name="摄像头位置")
-    cameraLat      = models.CharField(max_length=24, verbose_name="纬度")
-    cameraLon      = models.CharField(max_length=24, verbose_name="经度")
+    cameraLat      = models.CharField(max_length=24, null=True,verbose_name="纬度")
+    cameraLon      = models.CharField(max_length=24, null=True,verbose_name="经度")
     c_ip           = models.CharField(max_length=24, null = True ,verbose_name="摄像头ip地址")
     c_username     = models.CharField(max_length=100, null = True ,verbose_name="摄像头用户名")
     c_password     = models.CharField(max_length=100, null = True ,verbose_name="摄像头密码")
     c_token        = models.CharField(max_length=24, null = True ,verbose_name="摄像头token")
     c_detectStatus = models.IntegerField(choices=DETECT_CHOICE, default=0 ,verbose_name="摄像头检测状态")
     warning_event  = models.CharField(max_length=256,null=True,verbose_name='预警事件编号')
-
+    color = models.IntegerField(null=True,verbose_name="分级")
     class Meta:
         verbose_name = "摄像头信息"
         verbose_name_plural = verbose_name
@@ -375,4 +375,15 @@ class OperationRecord(models.Model):
 
     class Meta:
         verbose_name="操作日志"
+        verbose_name_plural = verbose_name
+
+class Pedestrian(models.Model):
+    cameraName = models.CharField(max_length=100,verbose_name="摄像头名称")
+    c_threshold = models.CharField(max_length=10, null=True, blank=True, verbose_name="置信度")
+    imgurl = models.CharField(max_length=100, null=True, blank=True, verbose_name="图片地址")
+    datetime = models.CharField(max_length=20, null=True, blank=True, verbose_name="实时时间")
+    color = models.IntegerField(null=True,blank=True, verbose_name="分级")
+    message = models.CharField(max_length=100,null= True,blank = True,verbose_name="告警信息")
+    class Meta:
+        verbose_name="行人检测"
         verbose_name_plural = verbose_name

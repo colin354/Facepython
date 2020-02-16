@@ -63,6 +63,9 @@ FACE_IMG_REAL_ROOT_URL = "http://221.231.13.230:8888/record_video"
 RECORD_ROOT_URL = 'http://221.231.13.230:8888/record_media/'
 LOCAL_VIDEO_URL = "/mnt/public/media"
 CENTOS_IP_ROOT = 'http://172.16.3.101:8888'
+
+#隔离管控
+RECORD_IMG = "http://172.16.3.109:8888/static/person"
 # Application definition
 INSTALLED_APPS = [
     'channels',
@@ -128,9 +131,9 @@ CHANNEL_LAYERS = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'vue_face',
+        'NAME': 'talent',
         'USER': 'root',
-        'PASSWORD': 'vue_face',
+        'PASSWORD': '123cpucpu',
         'HOST': '127.0.0.1',
         'PORT': '3306',
         'OPTIONS': { 'init_command': 'SET default_storage_engine=INNODB; SET sql_mode= STRICT_TRANS_TABLES; ' }

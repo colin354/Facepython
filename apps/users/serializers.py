@@ -7,7 +7,7 @@ from apps.users.models import Check
 from apps.users.models import Stream
 from apps.users.models import WarningType,WarningEvent,WarningHistory
 from apps.users.models import LoginRecord,OperationRecord
-from apps.users.models import Camera,Stranger,CameraStream,PersonReid,PersonDetect,MatchUp,CameraRealtime
+from apps.users.models import Camera,Stranger,CameraStream,PersonReid,PersonDetect,MatchUp,CameraRealtime,Pedestrian
 
 class TokenSerializer(serializers.ModelSerializer):
     """
@@ -76,7 +76,7 @@ class CameraSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Camera
-        fields = ('id','cameraName','cameraLocation','cameraLat','cameraLon','c_ip','c_username', 'c_password', 'c_token','c_detectStatus')
+        fields = ('id','cameraName','cameraLocation','cameraLat','cameraLon','c_ip','c_username', 'c_password', 'c_token','c_detectStatus',"color")
 
 
 class CameraStreamSerializer(serializers.ModelSerializer):
@@ -161,3 +161,10 @@ class OperationRecordSerializer(serializers.ModelSerializer):
     class Meta:
         model = OperationRecord
         fields = ("id","operation_username","operation_op","operation_method","operation_params","operation_url","operation_status","operation_ip","operation_useragent","operation_time")
+
+
+
+class PedestrianSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Pedestrian
+        fields = ('id','cameraName','c_threshold','imgurl','datetime','color','message')
