@@ -380,7 +380,7 @@ class OperationRecord(models.Model):
 class Pedestrian(models.Model):
     cameraName = models.CharField(max_length=100,verbose_name="摄像头名称")
     c_threshold = models.CharField(max_length=10, null=True, blank=True, verbose_name="置信度")
-    imgurl = models.CharField(max_length=100, null=True, blank=True, verbose_name="图片地址")
+    imgurl = models.CharField(max_length=150, null=True, blank=True, verbose_name="图片地址")
     datetime = models.CharField(max_length=20, null=True, blank=True, verbose_name="实时时间")
     color = models.IntegerField(null=True,blank=True, verbose_name="分级")
     message = models.CharField(max_length=100,null= True,blank = True,verbose_name="告警信息")

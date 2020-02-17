@@ -10,6 +10,7 @@ from apps.users.models import CameraStream as CameraStreamModel
 from apps.users.models import CameraRealtime as CameraRealtimeModel
 from django.conf import settings
 from channels.layers import get_channel_layer
+from django_redis import get_redis_connection
 from asgiref.sync import async_to_sync
 import os,json,sys
 import cv2
@@ -18,6 +19,8 @@ import pandas as pd
 import numpy as np
 import paramiko
 import configparser,re
+
+from django.core.cache import cache
 
 class CameraView(APIView):
 
@@ -318,28 +321,43 @@ class CameraPedestrian(APIView):
         camera = Camera.objects.filter(c_ip=buf['c_ip'])[0]
         buf['cameraName'] = camera.cameraName
         buf['color'] = camera.color
-        buf['message']="出现行人"
+        buf['message']="出现行人!!"
         buf['imgurl'] = settings.RECORD_IMG+buf['imgurl']
         #优化时间显示
         buf['datetime'] = re.sub("\D","",buf['datetime'])
-        buf['datetime'] = datetime.datetime.strptime(buf['datetime'],'%Y%m%d%H%M%S')
-        buf['datetime'] = datetime.datetime.strftime(buf['datetime'],'%Y-%m-%d %H:%M:%S')
-        serializer = PedestrianSerializer(data=buf)
-        if serializer.is_valid():
-            serializer.save()
+        
+        conn = get_redis_connection('default')
+        conn.hset(buf['c_ip'],'name',camera.cameraName)
+        l_time = conn.hget(buf['c_ip'],'last_time')
+        if l_time:
+            l_time = bytes.decode(l_time)
+            l_time = datetime.datetime.strptime(l_time,'%Y-%m-%d %H:%M:%S')
         else:
-            return JsonResponse(data=serializer.errors,code='999999',msg="failed")
-        print("continue")
-        channel_layer = get_channel_layer()
-        try:
-            result_all = json.dumps(buf)
-            print("---------------1---------------------")
-            print(result_all)
-            async_to_sync(channel_layer.group_send)('001',{"type": "user.message", 'text': result_all})
-            print("---------------2---------------------")
-        except Exception:
-            print("----------------------3------------------")
-            JsonResponse(data="无socket连接",code="999999",msg="failed")
+            l_time = datetime.datetime(2020,2,16,0,0,0)
+        p_time = datetime.datetime.strptime(buf['datetime'],'%Y%m%d%H%M%S')
+        buf['datetime'] = datetime.datetime.strftime(p_time,'%Y-%m-%d %H:%M:%S')
+        if compare_time(p_time,l_time):
+            print("now data is  true")
+            conn.hset(buf['c_ip'],'last_time',p_time)
+        
+            serializer = PedestrianSerializer(data=buf)
+            if serializer.is_valid():
+                serializer.save()
+            else:
+                return JsonResponse(data=serializer.errors,code='999999',msg="failed")
+            channel_layer = get_channel_layer()
+            try:
+                result_all = json.dumps(buf,ensure_ascii=False)
+                print("---------------1---------------------")
+                print(result_all)
+                async_to_sync(channel_layer.group_send)('001',{"type": "user.message", 'text': result_all})
+                print("---------------2---------------------")
+            except Exception:
+                print("----------------------3------------------")
+                JsonResponse(data="无socket连接",code="999999",msg="failed")
+        else:
+            delete_one_image(buf['imgurl'])
+        print("no error")
         return JsonResponse(data={},code="999999",msg="success")
 
     def get(self,request,*args,**kwargs):
@@ -369,6 +387,7 @@ class CameraPedestrian(APIView):
         pedestrian_ids = request.data
         result = Pedestrian.objects.filter(id__in=pedestrian_ids)
         try:
+            delete_images(result)
             result.delete()
             return JsonResponse(data={},code="999999",msg='success')
         except Exception:
@@ -497,7 +516,27 @@ def warning_judge(buf):
     result = warning_thing
     return result
 
+def compare_time(time1, time2):
+    print('here------>')
+    delta = time1 - time2
+    if delta.seconds >= 5:
+        return True
+    else:
+        return False
 
+def delete_images(images):
+    for image in images:
+        url = image.imgurl
+        url = url.replace(settings.RECORD_IMG,settings.LOCAL_IMG)
+        if (os.path.exists(url)):
+            os.remove(url)
+    return True
+
+def delete_one_image(image):
+    url = image.replace(settings.RECORD_IMG,settings.LOCAL_IMG)
+    if (os.path.exists(url)):
+        os.remove(url)
+    return True
 
 cameras = CameraView.as_view()
 camera_real = CameraReal.as_view()

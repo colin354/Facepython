@@ -66,6 +66,7 @@ CENTOS_IP_ROOT = 'http://172.16.3.101:8888'
 
 #隔离管控
 RECORD_IMG = "http://172.16.3.109:8888/static/person"
+LOCAL_IMG = '/home/images'
 # Application definition
 INSTALLED_APPS = [
     'channels',
@@ -123,6 +124,19 @@ CHANNEL_LAYERS = {
                         "hosts": [('127.0.0.1', 6379)], #需修改
                 },
         },
+}
+
+# redis配置
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/3",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "CONNECTION_POOL_KWARGS": {"max_connections": 300}
+            # "PASSWORD": "123",
+        }
+    }
 }
 
 # Database
