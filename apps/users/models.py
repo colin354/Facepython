@@ -175,10 +175,6 @@ class Stranger(models.Model):
     c_gender = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测性别")
     c_age = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测年龄")
     imgurl = models.CharField(max_length=200, null=True, verbose_name="图片url")
-    class Meta:
-        verbose_name = "陌生人数据"
-        verbose_name_plural = verbose_name
-
 
     class Meta:
         verbose_name="陌生人脸图片地址"
@@ -202,7 +198,7 @@ class Check(models.Model):
     c_threshold = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测阈值")
     url = models.CharField(max_length=100, null=True, verbose_name="流url")
     imgurl = models.CharField(max_length=100, null=True, verbose_name="图片url")
-
+    datetime = models.DateTimeField(null=True,blank=True)
     class Meta:
         verbose_name = "匹配信息"
         verbose_name_plural = verbose_name
@@ -324,7 +320,8 @@ class PersonReid(models.Model):
     c_y = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框y")
     c_w = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框w")
     c_h = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框h")
-
+    datetime = models.DateTimeField(null=True,blank=True)
+    
     class Meta:
         verbose_name = "行人重识别"
         verbose_name_plural = verbose_name
@@ -381,9 +378,28 @@ class CameraRealtime(models.Model):
     faceid = models.CharField(max_length=10, verbose_name='人员ID')
     #c_token = models.CharField(max_length=24, null=True, verbose_name="摄像头token")
     timestap = models.CharField(max_length=10, null=True, blank=True, verbose_name="时间戳")
+    datetime = models.DateTimeField(null=True,blank=True)
 
     class Meta:
         verbose_name="实时监控数据"
+        verbose_name_plural = verbose_name
+
+class PersonRealtime(models.Model):
+    cameraid  = models.CharField(max_length=10, verbose_name='摄像头ID')
+    c_x = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框x")
+    c_y = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框y")
+    c_w = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框w")
+    c_h = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框h")
+    c_threshold = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测阈值")
+    StreamUrl = models.CharField(max_length=200,null=True,blank=True,verbose_name="视频名称")
+    imgurl = models.CharField(max_length=200, null=True, verbose_name="图片url")
+    faceid = models.CharField(max_length=10, verbose_name='人员ID')
+    query_imgurl = models.CharField(max_length=100, null=True, verbose_name="query图片url")
+    timestap = models.CharField(max_length=10, null=True, blank=True, verbose_name="相对帧数")
+    datetime = models.DateTimeField(null=True,blank=True)
+    #datetime = models.CharField(max_length=30, null=True, blank=True, verbose_name="时间信息")
+    class Meta:
+        verbose_name="实时行人重识别数据"
         verbose_name_plural = verbose_name
 
 class WarningType(models.Model):
@@ -467,6 +483,31 @@ class OperationRecord(models.Model):
 
     class Meta:
         verbose_name="操作日志"
+        verbose_name_plural = verbose_name
+
+class PlateRealtime(models.Model):
+    cameraid  = models.CharField(max_length=10, verbose_name='摄像头ID')
+    stream_url = models.CharField(max_length=200,null=True,blank=True,verbose_name="视频名称")
+    plate_id      = models.CharField(max_length=100, null=True, blank=True, verbose_name='车牌ID')
+    plate_url     = models.CharField(max_length=256, null=True, blank=True, verbose_name='车牌url')
+    timestap    = models.CharField(max_length=256, null=True, blank=True, verbose_name='时间')
+    c_threshold = models.CharField(max_length=10, null=True, blank=True, verbose_name="检测阈值")
+    c_x = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框x")
+    c_y = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框y")
+    c_w = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框w")
+    c_h = models.CharField(max_length=10, null=True, blank=True, verbose_name="矩形框h") 
+    datetime = models.DateTimeField(null=True,blank=True)
+
+    class Meta:
+        verbose_name="实时车牌检测"
+        verbose_name_plural = verbose_name
+
+class Plate(models.Model):
+    plate_id      = models.CharField(max_length=100, null=True, blank=True, verbose_name='车牌ID')
+    plate_url     = models.CharField(max_length=256, null=True, blank=True, verbose_name='车牌url')
+
+    class Meta:
+        verbose_name="车牌库"
         verbose_name_plural = verbose_name
 
 # test serializer

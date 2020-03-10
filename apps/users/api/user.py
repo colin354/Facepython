@@ -207,8 +207,7 @@ class UserProfile(APIView):
                         "path":item.path,\
                         "component":item.component,\
                         "componentPath":item.componentPath,\
-                        "meta":{"title":item.title, "cache":True},\
-                        "children":[]})
+                        "meta":{"title":item.title, "cache":True}})
                 parent[str(item.id)] = parent[str(item.parent_id)]['children'][-1]
         data['accessRoutes'] = tmp
         data['isAdmin'] = isAdmin
@@ -222,12 +221,26 @@ class UserApi(APIView):
     @TokenVerify
     def get(self, request, format=None):
         username = request.GET.get('username')
+        export = request.GET.get("export")
+        limit = request.GET.get("limit")
+        page = request.GET.get("page")
+        #if export == "export":
+         #   userall = User.objects.all()
+          #  serializer = UserSerializer(userall,many=True)
+           # return JsonResponse(data={"list":serializer.data,"count":len(userall)},code="999999",msg="success")
         data = []
         filter_users = []
         if(username is not None):
             filter_users = User.objects.filter(username__contains=username)
         else:
             filter_users = User.objects.all()
+            userslen = len(filter_users)
+            if export != "export":
+                a = int(limit)
+                b = int(page)
+                start = a*(b-1)
+                end = a*b
+                filter_users = filter_users[start:end]
         for item in filter_users:
             temp = UserSerializer(item).data
             if(item.userextrainfo_set.count()==1):
@@ -241,7 +254,7 @@ class UserApi(APIView):
             else:
                 temp['role_name'] = ""
             data.append(temp)
-        return JsonResponse(data={'list':data, 'count':len(data)}, code='999999', msg='成功')
+        return JsonResponse(data={'list':data, 'count':userslen}, code='999999', msg='成功')
 
     @TokenVerify
     def delete(self, request):

@@ -11,7 +11,7 @@ from apps.users.models import PersonReid as PersonReidModel
 from apps.users.models import MatchUp as MatchUpModel
 from collections import OrderedDict
 from itertools import chain
-
+import datetime
 import random
 
 from apps.users.models import CameraStream as CameraStreamModel
@@ -123,6 +123,7 @@ class Check(APIView):
                 ###暂时还没有streamName字段
                 # camera =CameraModel.objects.get(pk = int(stream.cameraId))
                 item['streamname'] = stream.cameraId.cameraLocation + '-' + stream.cameraId.cameraName
+                item['url'] = settings.FACE_IMG_REAL_ROOT_URL+item['url']
                 print(int(faceid))
                 if int(faceid) < 1000:
                     username = FaceModel.objects.get(pk=faceid).username
@@ -132,12 +133,12 @@ class Check(APIView):
                     rets['facename'] = username
                 else:
                     username = "陌生人"+'-'+faceid
-                    try:
-                        strangers = MatchUpModel.objects.get(faceid=str(faceid))
-                        img = {"user_id":strangers.faceid,"imgurl":settings.FACE_IMG_CHECK_ROOT_URL+strangers.dec_img_url}
-                    except:
-                        strangers = StrangerModel.objects.filter(faceid = faceid).values('faceid','imgurl')
-                        img = {"user_id":strangers[0]['faceid'],"imgurl":settings.FACE_IMG_CHECK_ROOT_URL+strangers[0]['imgurl']}
+                    # try:
+                    #     strangers = MatchUpModel.objects.get(faceid=str(faceid))
+                    #     img = {"user_id":strangers.faceid,"imgurl":settings.FACE_IMG_REAL_ROOT_URL+strangers.dec_img_url}
+                    # except:
+                    strangers = StrangerModel.objects.filter(faceid = faceid).values('faceid','imgurl')
+                    img = {"user_id":strangers[0]['faceid'],"imgurl":settings.FACE_IMG_REAL_ROOT_URL+strangers[0]['imgurl']}
                     img['username'] = username
                     item['facename'] = username
                 imgs.append(img)
@@ -149,20 +150,22 @@ class Check(APIView):
         elif ((faceid != 'None' and faceid != '') and (streamid == 'None' or streamid == '')):
             print("Only faceid")
             print(faceid)
-            checks = CheckModel.objects.filter(faceid=faceid).values('faceid','streamid','time','url').distinct()
-            personreids =PersonReidModel.objects.filter(faceid = faceid).values("faceid","streamid","time",'url').distinct()
+            checks_buf = CheckModel.objects.all()
+            personreids_buf = PersonReidModel.objects.all()
+            checks = checks_buf.filter(faceid=faceid).values('faceid','streamid','datetime','url').distinct()
+            personreids =personreids_buf.filter(faceid = faceid).values("faceid","streamid","datetime",'url').distinct()
             imgs = []
             if int(faceid)< 1000:#集合陌生人
                 imgs = FaceImgModel.objects.filter(userid_id=faceid).values('userid_id', 'imgurl')
             else:
-                try:
-                    img = {'imgurl': settings.FACE_IMG_CHECK_ROOT_URL +MatchUpModel.objects.get(faceid=str(faceid)).dec_img_url,'userid_id': faceid}
-                except:
-                    img = {'imgurl':settings.FACE_IMG_CHECK_ROOT_URL+CheckModel.objects.filter(faceid = faceid).values('imgurl')[0]['imgurl'],'userid_id':faceid}
+                # try:
+                #     img = {'imgurl': settings.FACE_IMG_CHECK_ROOT_URL +MatchUpModel.objects.get(faceid=str(faceid)).dec_img_url,'userid_id': faceid}
+                # except:
+                img = {'imgurl':settings.FACE_IMG_REAL_ROOT_URL+CheckModel.objects.filter(faceid = faceid).values('imgurl')[0]['imgurl'],'userid_id':faceid}
                 imgs.append(img)
             matchs = list(checks)+list(personreids)
             #根据time做排序（默认所有视频都是同一时间开始）
-            matchs.sort(key=lambda k: (float(k.get('time'))), reverse=False)
+            matchs.sort(key=lambda k: (k.get('datetime')), reverse=False)
             times = []
             locations = []
             front_location = []
@@ -171,7 +174,7 @@ class Check(APIView):
             markers = []
             rcv = []
             for match in matchs:
-
+                location = {}
                 if int(faceid)< 1000:
                     face = FaceModel.objects.get(pk=faceid)
                     match['facename'] = face.username
@@ -180,18 +183,26 @@ class Check(APIView):
                 stream = CameraStreamModel.objects.get(pk=int(match['streamid']))
                 camera = stream.cameraId
                 match['streamname'] = camera.cameraLocation + '-' + camera.cameraName
-                time = match['time']
+                match['url'] = settings.FACE_IMG_REAL_ROOT_URL+match['url']
+                time = match['datetime']
+                #防止行人与人脸有相同时间的记录，逻辑上不会出现这种问题
                 if time in times:
                     continue
                 if not times:
                     front_location = [float(camera.cameraLon), float(camera.cameraLat)]
-                    match_location = front_location
+                    #match_location = front_location
+                    
                 else:
                     sencond_location = [float(camera.cameraLon), float(camera.cameraLat)]
-                    match_location = getmovelocation(front_location,sencond_location)
+                    if sencond_location == front_location:
+                        #前后位置相同的不画
+                        continue
+                    # match_location = getmovelocation(front_location,sencond_location)
+                    match_location = {"start":front_location,"end":sencond_location}
                     front_location = sencond_location
+                    locations.append(match_location)
                 times.append(time)
-                locations.append(match_location)
+                #locations.append(match_location)
                 if match['streamid'] in streamids:
                     continue
                 streamids.append(match['streamid'])
@@ -330,8 +341,20 @@ class CheckTrack(APIView):
     def get(self,request,*args,**kwargs):
         msg_data = "成功"
         print("check track record get!")
-        faces1 = list(CheckModel.objects.values('faceid').distinct())
-        faces2 = list(PersonReidModel.objects.values('faceid').distinct())
+        startTime = request.GET.get('startTime')
+        endTime = request.GET.get('endTime')
+        print('get time')
+        print(startTime, endTime)
+        Check_all = CheckModel.objects.all()
+        PersonReid_all = PersonReidModel.objects.all()
+        if(startTime != None and endTime != None):
+            print(startTime, endTime)
+            startTimeObj = datetime.datetime.strptime(startTime, '%Y-%m-%d %H:%M:%S')
+            endTimeObj = datetime.datetime.strptime(endTime, '%Y-%m-%d %H:%M:%S')
+            Check_all = CheckModel.objects.filter(datetime__range=(startTimeObj, endTimeObj))
+            PersonReid_all = PersonReidModel.objects.filter(datetime__range=(startTimeObj, endTimeObj))
+        faces1 = list(Check_all.values('faceid').distinct())
+        faces2 = list(PersonReid_all.values('faceid').distinct())
         faces = faces1 + faces2
         # faces = list_dict_duplicate_removal(faces)
         # print(faces)
@@ -345,45 +368,29 @@ class CheckTrack(APIView):
                 continue
             faceids.append(face['faceid'])
             newlist = {}
-            #locationlist = []
-            #list['faceid'] = face['faceid']
-            streamids1 = CheckModel.objects.filter(faceid = face['faceid']).values('streamid','timestap').distinct()
-            streamids2 = PersonReidModel.objects.filter(faceid = face['faceid']).values('streamid','timestap').distinct()
+            streamids1 = Check_all.filter(faceid = face['faceid']).values('streamid','datetime').distinct()
+            streamids2 = PersonReid_all.filter(faceid = face['faceid']).values('streamid','datetime').distinct()
             streamids = list(streamids1)+list(streamids2)
-            # print(streamids)
-            ##根据timestap做排序
-            streamids.sort(key=lambda k: (int(k.get('timestap'))), reverse=False)
-            # print(streamids)
+            streamids.sort(key=lambda k: (k.get('datetime')), reverse=False)
             locations = []
+            pre = []
             for i,value in enumerate(streamids):
-                # location = StreamModel.objects.filter(id=value['streamid']).values('streamlat','streamlon')[0]
                 stream = CameraStreamModel.objects.get(pk=int(value['streamid']))
-                print(stream)
                 location = stream.cameraId
-                #print(location_id)
-                #location = CameraModel.objects.get(pk=int(location_id))
-                #return JsonResponse(data={}, code="999999", msg="")
                 if i>0:
-                    # if a == [float(location['streamlon']), float(location['streamlat'])]:
-                    if a == [float(location.cameraLon), float(location.cameraLat)]:
+                    if pre == [float(location.cameraLon), float(location.cameraLat)]:
                         continue
-                    # b =getmovelocation(a,[float(location['streamlon']),float(location['streamlat'])])
-                    b = getmovelocation(a, [float(location.cameraLon), float(location.cameraLat)])
-                    #[locations[0][0],locations[0][1],location['streamlon'],location['streamlat']]
-                    locations.append(b)
-                    #locationlist.append(locations)
-                    #locations = []
+                    pre = [float(location.cameraLon), float(location.cameraLat)]
+                    locations.append(pre)
                 else:
-                    # a = [float(location['streamlon']), float(location['streamlat'])]
-                    a = [float(location.cameraLon), float(location.cameraLat)]
-                    locations.append(a)
-                # a = [float(location['streamlon']), float(location['streamlat'])]
-                a = [float(location.cameraLon), float(location.cameraLat)]
+                    pre = [float(location.cameraLon), float(location.cameraLat)]
+                    locations.append(pre)
+                #a = [float(location.cameraLon), float(location.cameraLat)]
+            print("locations = ", locations)
             if cols:
                 col = random.choice(cols)
                 newlist['color'] = col
                 cols.remove(col)
-                print(len(cols))
             else:
                 msg_data ="已达到上限"
                 break
@@ -393,17 +400,24 @@ class CheckTrack(APIView):
                 face_msg = FaceModel.objects.get(pk = int(face['faceid']))
                 face_img = FaceImgModel.objects.filter(userid=int(face['faceid'])).values("imgurl")[0]
                 newlist['facename'] = face_msg.username
-                newlist['faceimgurl'] = settings.FACE_IMG_CHECK_ROOT_URL+face_img['imgurl']
+                newlist['faceimgurl'] = face_img['imgurl']
             else:
-                try:
-                    face_img = MatchUpModel.objects.get(faceid=str(face['faceid']))
-                    newlist['faceimgurl'] = settings.FACE_IMG_CHECK_ROOT_URL+face_img.dec_img_url
-                except:
-                    face_img = StrangerModel.objects.filter(faceid=face['faceid']).values('id', 'imgurl')[0]
-                    newlist['faceimgurl'] = settings.FACE_IMG_CHECK_ROOT_URL+face_img['imgurl']
+                face_img = StrangerModel.objects.filter(faceid=face['faceid']).values('id', 'imgurl')[0]
+                newlist['faceimgurl'] = settings.FACE_IMG_REAL_ROOT_URL+face_img['imgurl']
                 newlist['facename'] = '陌生人-'+str(face['faceid'])
             newlist['faceid'] = face['faceid']
             newlist['location'] = locations
+            temp = []
+            temp.append({'color':newlist['color']})
+            for it in locations:
+                for i in range(len(it)):
+                    it[i] *= 1000000
+                    it[i] = float(int(it[i]))/1000000
+                if(len(it) == 4):
+                    temp.append({'start':it[:2], 'end':it[2:]})
+            #if(len(locations)>=2): temp['start'] = [locations[0], locations[1]]
+            #if(len(locations)>=4): temp['end'] = [locations[2], locations[3]]
+            newlist['location'] = temp
             lists.append(newlist)
                 # print("1111111111111111111111111111")
                 # print(locations)
@@ -417,9 +431,79 @@ class CheckTrack(APIView):
             #     a = [location['streamlon'],location['streamlat']]
             #     locations.append(a)
                 #list['location'].append([StreamModel.objects.get(pk=streamid)['streamlon'],])
+            print("Only faceid")
+            for i,v in enumerate(lists):
+                faceid = v['faceid']
+                print(faceid)
+                checks_buf = Check_all
+                personreids_buf = PersonReid_all
+                checks = checks_buf.filter(faceid=faceid).values('faceid','streamid','datetime','url').distinct()
+                personreids =personreids_buf.filter(faceid = faceid).values("faceid","streamid","datetime",'url').distinct()
+                imgs = []
+                if int(faceid)< 1000:#集合陌生人
+                    imgs = FaceImgModel.objects.filter(userid_id=faceid).values('userid_id', 'imgurl')
+                else:
+                    # try:
+                    #     img = {'imgurl': settings.FACE_IMG_CHECK_ROOT_URL +MatchUpModel.objects.get(faceid=str(faceid)).dec_img_url,'userid_id': faceid}
+                    # except:
+                    img = {'imgurl':settings.FACE_IMG_REAL_ROOT_URL+CheckModel.objects.filter(faceid = faceid).values('imgurl')[0]['imgurl'],'userid_id':faceid}
+                    imgs.append(img)
+                matchs = list(checks)+list(personreids)
+                #根据time做排序（默认所有视频都是同一时间开始）
+                matchs.sort(key=lambda k: (k.get('datetime')), reverse=False)
+                times = []
+                locations = [{'color':v['color']}]
+                front_location = []
+                streamids = []
+                cameraids = []
+                markers = []
+                rcv = []
+                for match in matchs:
+                    location = {}
+                    if int(faceid)< 1000:
+                        face = FaceModel.objects.get(pk=faceid)
+                        match['facename'] = face.username
+                    else:
+                        match['facename'] = "陌生人"+faceid
+                    stream = CameraStreamModel.objects.get(pk=int(match['streamid']))
+                    camera = stream.cameraId
+                    match['streamname'] = camera.cameraLocation + '-' + camera.cameraName
+                    match['url'] = settings.FACE_IMG_REAL_ROOT_URL+match['url']
+                    time = match['datetime']
+                    #防止行人与人脸有相同时间的记录，逻辑上不会出现这种问题
+                    if time in times:
+                        continue
+                    if not times:
+                        front_location = [float(camera.cameraLon), float(camera.cameraLat)]
+                	#match_location = front_location	
+                    else:
+                        sencond_location = [float(camera.cameraLon), float(camera.cameraLat)]
+                        if sencond_location == front_location:
+                	#前后位置相同的不画
+                            continue
+                	# match_location = getmovelocation(front_location,sencond_location)
+                        match_location = {"start":front_location,"end":sencond_location}
+                        front_location = sencond_location
+                        locations.append(match_location)
+                    times.append(time)
+                    #locations.append(match_location)
+                    if match['streamid'] in streamids:
+                        continue
+                    streamids.append(match['streamid'])
+                    rcv.append(match)
+                    #封装标记点
+                    if camera.id in cameraids:
+                        continue
+                    cameraids.append(camera.id)
+                    markers.append((camera.cameraLon,camera.cameraLat))
+                
+                imgs = list(imgs)
+                print(locations)
+                print(rcv)
+                lists[i]['location'] = locations
         #做轨迹的Marker标记
-        streams_check = CheckModel.objects.values("streamid").distinct()
-        streams_personreid = PersonReidModel.objects.values("streamid").distinct()
+        streams_check = Check_all.values("streamid").distinct()
+        streams_personreid = PersonReid_all.values("streamid").distinct()
         stream_all = list(streams_check)+list(streams_personreid)
         streamids = []
         cameras = []
@@ -456,6 +540,74 @@ def getmovelocation(buf1,buf2):
     rec = [rec[0],rec[1],buf2[0],buf2[1]]
     return rec
 
+class CheckPersonRecord(APIView):
+
+    def get(self,request,*args,**kwargs):
+        msg_data = "成功"
+        startTime = request.GET.get('startTime')
+        endTime = request.GET.get('endTime')
+        print('get time')
+        print(startTime, endTime)
+        Check_all = CheckModel.objects.all()
+        PersonReid_all = PersonReidModel.objects.all()
+        if(startTime != None and endTime != None):
+            print(startTime, endTime)
+            startTimeObj = datetime.datetime.strptime(startTime, '%Y-%m-%d %H:%M:%S')
+            endTimeObj = datetime.datetime.strptime(endTime, '%Y-%m-%d %H:%M:%S')
+            Check_all = CheckModel.objects.filter(datetime__range=(startTimeObj, endTimeObj))
+            PersonReid_all = PersonReidModel.objects.filter(datetime__range=(startTimeObj, endTimeObj))
+        faces1 = list(Check_all.values('faceid').distinct())
+        faces2 = list(PersonReid_all.values('faceid').distinct())
+        faces = faces1 + faces2
+        lists = []
+        faceids = []
+        cols = ["#a33038","#005195","#008998","#ae005f","#ba8b00","#c94d00","#009974","#C2C2C2","#CD00CD","#CD6600","#8fd400","#0095c3","#f5d312",]
+        for face in faces:
+            if face['faceid'] in faceids:
+                continue
+            faceids.append(face['faceid'])
+            newlist = {}
+            streamids1 = Check_all.filter(faceid = face['faceid']).values('streamid','datetime').distinct()
+            streamids2 = PersonReid_all.filter(faceid = face['faceid']).values('streamid','datetime').distinct()
+            streamids = list(streamids1)+list(streamids2)
+            streamids.sort(key=lambda k: (k.get('datetime')), reverse=False)
+            locations = []
+            pre = []
+            for i,value in enumerate(streamids):
+                stream = CameraStreamModel.objects.get(pk=int(value['streamid']))
+                location = stream.cameraId
+                if i>0:
+                    if pre == [float(location.cameraLon), float(location.cameraLat)]:
+                        continue
+                    pre = [float(location.cameraLon), float(location.cameraLat)]
+                    locations.append(pre)
+                else:
+                    pre = [float(location.cameraLon), float(location.cameraLat)]
+                    locations.append(pre)
+                #a = [float(location.cameraLon), float(location.cameraLat)]
+            print("locations = ", locations)
+            if cols:
+                col = random.choice(cols)
+                newlist['color'] = col
+                cols.remove(col)
+            else:
+                msg_data ="已达到上限"
+                break
+
+            if int(face['faceid']) < 1000:
+                face_msg = FaceModel.objects.get(pk = int(face['faceid']))
+                face_img = FaceImgModel.objects.filter(userid=int(face['faceid'])).values("imgurl")[0]
+                newlist['facename'] = face_msg.username
+                newlist['faceimgurl'] = face_img['imgurl']
+            else:
+                face_img = StrangerModel.objects.filter(faceid=face['faceid']).values('id', 'imgurl')[0]
+                newlist['faceimgurl'] = settings.FACE_IMG_REAL_ROOT_URL+face_img['imgurl']
+                newlist['facename'] = '陌生人-'+str(face['faceid'])
+            newlist['faceid'] = face['faceid']
+            lists.append(newlist)
+        return JsonResponse(data={'list':lists}, code="999999", msg=msg_data)
+
 check_face = Check.as_view()
 check_location = CheckLocations.as_view()
 check_track = CheckTrack.as_view()
+check_person_record = CheckPersonRecord.as_view();

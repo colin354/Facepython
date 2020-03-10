@@ -164,6 +164,12 @@ class FaceView(APIView):
         limit = request.GET.get('limit')
         page = request.GET.get('page')
         username = request.GET.get('username')
+        export = request.GET.get("export")
+        #如果带export参数
+        if export == "export":
+            faceall = Face.objects.all()
+            serializer = FaceSerializer(faceall,many =True)
+            return JsonResponse(data={"list":serializer.data,"count":len(faceall)},code = "999999",msg = "success")
         #如果在url里带上了faceid
         if request.path_info.strip('/').split('/')[-1].isdigit() == True:
             # 获取某一个具体人脸的信息

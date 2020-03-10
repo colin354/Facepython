@@ -13,11 +13,15 @@ class LoginRecordView(APIView):
     @TokenVerify
     @OperationLog
     def get(self,request,*args,**kwargs):
+        export = request.GET.get("export","")
+        loginrecordall = LoginRecord.objects.all()
+        if export == "export":
+            serializer = LoginRecordSerializer(loginrecordall,many=True)
+            return JsonResponse(data={'list': serializer.data, 'count': len(loginrecordall)}, code='999999',msg="success")
         a = int(request.GET['limit'])
         b = int(request.GET['page'])
         start = a * (b - 1)
         end = a * b
-        loginrecordall = LoginRecord.objects.all()
         loginrecord = loginrecordall[start:end]
         serializer = LoginRecordSerializer(loginrecord, many=True)
         return JsonResponse(data={'list': serializer.data, 'count': len(loginrecordall)}, code='999999',
@@ -27,14 +31,36 @@ class OperationRecordView(APIView):
     @TokenVerify
     @OperationLog
     def get(self,request,*args,**kwargs):
+        operationrecordall = OperationRecord.objects.all()
+        export = request.GET.get("export","")
+        if export == 'export':
+            serializer = OperationRecordSerializer(operationrecordall,many=True)
+            return JsonResponse(data={'list': serializer.data, 'count': len(operationrecordall)}, code='999999',msg="success")
         a = int(request.GET['limit'])
         b = int(request.GET['page'])
         start = a * (b - 1)
         end = a * b
+        operationrecord = operationrecordall[start:end]
+        serializer = OperationRecordSerializer(operationrecord,many=True)
+        return JsonResponse(data={'list':serializer.data,'count':len(operationrecordall)}, code="999999", msg="成功")
+
+class ErrorRecordView(APIView):
+    @TokenVerify
+    @OperationLog
+    def get(self,request,*args,**kwargs):
         operationrecordall = OperationRecord.objects.all()
+        export = request.GET.get("export","")
+        if export == 'export':
+            serializer = OperationRecordSerializer(operationrecordall,many=True)
+            return JsonResponse(data={'list': serializer.data, 'count': len(operationrecordall)}, code='999999',msg="success")
+        a = int(request.GET['limit'])
+        b = int(request.GET['page'])
+        start = a * (b - 1)
+        end = a * b
         operationrecord = operationrecordall[start:end]
         serializer = OperationRecordSerializer(operationrecord,many=True)
         return JsonResponse(data={'list':serializer.data,'count':len(operationrecordall)}, code="999999", msg="成功")
 
 login_record = LoginRecordView.as_view()
 operation_record = OperationRecordView.as_view()
+error_record = ErrorRecordView.as_view()

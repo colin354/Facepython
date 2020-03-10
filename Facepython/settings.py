@@ -57,12 +57,13 @@ CAMERA_RECORD_BASE_URL = '/opt/h5ss/www/mediastore/record/'
 #RECORD_ROOT_URL = 'http://172.14.40.60:8888/record_media/'
 #CENTOS_IP_ROOT = 'http://172.14.40.60:8888'
 
-FACE_IMG_CHECK_ROOT_URL = 'http://221.231.13.230:8888'
-FACE_IMG_ROOT_URL = "http://221.231.13.230:8888/media/"
-FACE_IMG_REAL_ROOT_URL = "http://221.231.13.230:8888/record_video"
-RECORD_ROOT_URL = 'http://221.231.13.230:8888/record_media/'
+FACE_IMG_CHECK_ROOT_URL = 'http://221.231.13.230:8815'
+FACE_IMG_ROOT_URL = "http://221.231.13.230:8815/media/"
+FACE_IMG_REAL_ROOT_URL = "http://221.231.13.230:8815/record_video"
+PLATE_IMG_REAL_ROOT_URL = "http://221.231.13.230:8815/record_video"
+RECORD_ROOT_URL = 'http://221.231.13.230:8815/record_media/'
 LOCAL_VIDEO_URL = "/mnt/public/media"
-CENTOS_IP_ROOT = 'http://172.16.3.101:8888'
+CENTOS_IP_ROOT = 'http://172.16.3.115:8888'
 # Application definition
 INSTALLED_APPS = [
     'channels',
@@ -117,7 +118,7 @@ CHANNEL_LAYERS = {
         'default': {
                 'BACKEND': 'channels_redis.core.RedisChannelLayer',
                 'CONFIG': {
-                        "hosts": [('127.0.0.1', 6379)], #需修改
+                        "hosts": [("127.0.0.1",6379)], #需修改
                 },
         },
 }
@@ -134,6 +135,26 @@ DATABASES = {
         'HOST': '127.0.0.1',
         'PORT': '3306',
         'OPTIONS': { 'init_command': 'SET default_storage_engine=INNODB; SET sql_mode= STRICT_TRANS_TABLES; ' }
+    }
+}
+
+CACHES = {
+    "default":{
+        "BACKEND":"django_redis.cache.RedisCache",
+        "LOCATION":"redis://127.0.0.1:6379/2",
+        "TIMEOUT": None,
+        "OPTIONS":{
+            "CLIENT_CLASS":"django_redis.client.DefaultClient",
+        }
+    },
+    "flow":{
+        "BACKEND":"django_redis.cache.RedisCache",
+        "LOCATION":"redis://127.0.0.1:6379/4",
+        "TIMEOUT": 2592000,   #失效时间为1个月
+        "OPTIONS":{
+            "CLIENT_CLASS":"django_redis.client.DefaultClient",
+        }
+
     }
 }
 

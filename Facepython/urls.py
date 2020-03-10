@@ -21,7 +21,7 @@ from users.api import user,face,stream,facerecord,camera,warning,log, menu,role
 from django.views.generic import TemplateView
 from django.conf.urls.static import static
 from django.conf import settings
-from users.api import check,person,match,detect_ctl,screen_data
+from users.api import check,person,match,detect_ctl,screen_data,plate
 urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^admin/', admin.site.urls),
@@ -40,6 +40,7 @@ urlpatterns = [
     url(r'^api/role',role.role_manage),
     url(r'^api/user/role',user.user_role_manage),
     url(r'^api/user_role', user.user_role_manage),
+    url(r'^api/person_record', check.check_person_record),
     url(r'^img',face.face_img),
     url(r'^api/check', check.check_face),
     url(r'^sys/check/location', check.check_location),#可根据下面个的注释做修改
@@ -52,15 +53,19 @@ urlpatterns = [
     url(r'^sys/stream',stream.stream_add),
     url(r'^sys/facerecord',facerecord.face_record),
     url(r'^sys/stranger',face.strangers),
+    url(r'^sys/plate',plate.plates),
     url(r'^sys/camerastream', camera.camera_stream),
     url(r'^sys/camerareal', camera.camera_real),
     url(r'^sys/cameraws', camera.camera_ws),
+    url(r'^sys/cameraplatews', camera.camera_plate_ws),
+    url(r'^sys/camerapersonws', camera.camera_person_ws),
     url(r'^sys/camerarecord', camera.camera_record_for_cs),
     url(r'^sys/cameras',camera.cameras),
     url(r'^sys/check',check.check_track),
     url(r'^sys/detect_ctl',detect_ctl.detect),
     url(r'^sys/log/login/page',log.login_record),
     url(r'^sys/log/operation/page',log.operation_record),
+    url(r'^sys/log/error/page',log.error_record),
     url(r'^api/screenData',screen_data.screen_info),
     url(r'^api/screenDevice',screen_data.screen_device),
     url(r'^api/screenRight/warning',screen_data.screen_warning),

@@ -169,6 +169,10 @@ class StreamView(APIView):
 class  VideoStruct(APIView):
     @TokenVerify
     def get(self, request, *args, **kwargs):
+        print('--------videostruct----------')
+        labels = request.GET.get("date")
+        print("lables!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        print(labels)
         cameralocations = Camera.objects.all().values('cameraLocation').distinct()
         newlist = []
         start = time.time()
@@ -184,10 +188,20 @@ class  VideoStruct(APIView):
                 ret3 = {}
                 # ret3['id'] = cameraname['id']
                 ret3['label'] = cameraname['cameraName']
-                camerastreamlabels= CameraStream.objects.filter(cameraId_id=int(cameraname['id'])).values('label').distinct()
+                #camerastreamlabels= CameraStream.objects.filter(cameraId_id=int(cameraname['id'])).values('label').distinct()
+                if labels == "" or labels == None:
+                    #默认返回当天的
+                    nowlabel = time.strftime('%Y-%m-%d')
+                    camerastreamlabels = {nowlabel}
+                else:
+                    #预留多查方式
+                    camerastreamlabels = {labels}
+                  
                 #ret3['children'] = list(camerastreams)
                 ret4 = []
+               # camerastreamlabels = {"2020-02-10"}
                 for camerastreamlabel in camerastreamlabels:
+                    #camerastreams = CameraStream.objects.filter(cameraId_id=int(cameraname['id'])).filter(label=camerastreamlabel['label']).values('streamUrl','startTime','id','label','faceNum','personNum')
                     ret5 = {}
                     #match_num  = len(Check.objects.filter(streamid=str(camerastream['id'])))+len(PersonReid.objects.filter(streamid=str(camerastream['id'])))
                     #print(camerastream['startTime'])
@@ -195,10 +209,14 @@ class  VideoStruct(APIView):
                     #ret4['label'] = camerastream['startTime'] +"("+"匹配次数"+str(match_num)+")"
                     #ret4['id'] = camerastream['id']
                     #ret4['streamUrl'] = camerastream['streamUrl']
-                    ret5['label'] = camerastreamlabel['label']
+                    ret5['label'] = camerastreamlabel
                     ret5['children'] =[]
+                    camerastreams = CameraStream.objects.filter(cameraId_id=int(cameraname['id'])).filter(label=camerastreamlabel).values('streamUrl','startTime','id','label','faceNum','personNum')
+                    if len(camerastreams) == 0:
+                        ret4.append(ret5)
+                        continue
+                    #ret5['label'] = camerastreamlabel['label']
                     #camerastreams = CameraStream.objects.filter(cameraId_id=int(cameraname['id'])).filter(label=camerastreamlabel['label']).values('label').values("streamUrl","startTime",'id')
-                    camerastreams = CameraStream.objects.filter(cameraId_id=int(cameraname['id'])).filter(label=camerastreamlabel['label']).values('streamUrl','startTime','id','label','faceNum','personNum')
                     #camerastreams['count']
                     for camerastream in camerastreams:
                         #print(camerastream)

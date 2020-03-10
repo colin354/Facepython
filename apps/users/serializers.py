@@ -1,12 +1,10 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
-from apps.users.models import Face
-from apps.users.models import FaceImg
-from apps.users.models import Check
-from apps.users.models import Stream
+from apps.users.models import Face,FaceImg,Check,Stream
 from apps.users.models import WarningType,WarningEvent,WarningHistory
 from apps.users.models import LoginRecord,OperationRecord
+from apps.users.models import Plate,PlateRealtime,PersonRealtime
 from apps.users.models import Camera,Stranger,CameraStream,PersonReid,PersonDetect,MatchUp,CameraRealtime
 from apps.users.models import Camera,Stranger,Role,CameraStream,PersonReid,PersonDetect,MatchUp,CameraRealtime,Permission, FunctionInterface,Interface, Track, Album
 from apps.users.models import UserExtraInfo
@@ -91,7 +89,7 @@ class CheckSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Check
-        fields = ('timestap', 'c_x', 'c_y','time', 'c_w', 'c_h', 'c_ip', 'c_gender', 'c_age', 'c_threshold', 'streamid', 'faceid', 'id', 'url', 'imgurl')
+        fields = ('timestap', 'c_x', 'c_y','time', 'c_w', 'c_h', 'c_ip', 'c_gender', 'c_age', 'c_threshold', 'streamid', 'faceid', 'id', 'url', 'imgurl','datetime')
 
 class FaceImgSerializer(serializers.ModelSerializer):
     """
@@ -150,7 +148,7 @@ class PersonReidSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = PersonReid
-        fields = ('faceid','streamid','imgurl','url','c_threshold','timestap','query_imgurl','c_x','c_y','c_w','c_h','time')
+        fields = ('faceid','streamid','imgurl','url','c_threshold','timestap','query_imgurl','c_x','c_y','c_w','c_h','time','datetime')
 
 
 # class PersonTopSerializer(serializers.ModelSerializer):
@@ -182,7 +180,7 @@ class MatchUpSerializer(serializers.ModelSerializer):
 class CameraRealtimeSerializer(serializers.ModelSerializer):
     class Meta:
         model = CameraRealtime
-        fields = ("cameraid","c_x","c_y","c_w","c_h","c_threshold","StreamUrl","imgurl","faceid","timestap")
+        fields = ("cameraid","c_x","c_y","c_w","c_h","c_threshold","StreamUrl","imgurl","faceid","timestap",'datetime')
 
 class WarningTypeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -208,3 +206,18 @@ class OperationRecordSerializer(serializers.ModelSerializer):
     class Meta:
         model = OperationRecord
         fields = ("id","operation_username","operation_op","operation_method","operation_params","operation_url","operation_status","operation_ip","operation_useragent","operation_time")
+
+class PlateRealtimeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlateRealtime
+        fields = ("id","cameraid","stream_url","plate_id","plate_url","timestap","c_threshold","c_x","c_y","c_h","c_w",'datetime')
+
+class PlateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Plate
+        fields = ("id","plate_id","plate_url")
+
+class PersonRealtimeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PersonRealtime
+        fields = ("cameraid","c_x","c_y","c_w","c_h","c_threshold","StreamUrl","imgurl","faceid","query_imgurl","timestap","datetime")

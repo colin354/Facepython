@@ -1,7 +1,7 @@
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from users.common.api_response import JsonResponse
-from apps.users.models import Camera,WarningType,WarningEvent,WarningHistory,Face
+from apps.users.models import Camera,WarningType,WarningEvent,WarningHistory,Face,Plate
 from apps.users.serializers import WarningTypeSerializer,WarningEventSerializer,WarningHistorySerializer
 from apps.users.tasks import add,start,stop,do_train
 from rest_framework import serializers
@@ -69,7 +69,7 @@ class WarningEventCtrlView(APIView):
             warningevent.save()
             ret = start(warningevent)
             print('-----eee----------')
-            result1 = do_train.apply_async(args=[1,21], queue="train", routing_key="train")
+            #result1 = do_train.apply_async(args=[1,21], queue="train", routing_key="train")
             #re_data = result1.get()
             #print(re_data)
         else:
@@ -78,8 +78,8 @@ class WarningEventCtrlView(APIView):
             warningevent.save()
             ret = stop(warningevent)
             print('-----eee----------')
-            result1 = do_train.apply_async(args=[3,4], queue="train", routing_key="train")
-            print(result1)
+            #result1 = do_train.apply_async(args=[3,4], queue="train", routing_key="train")
+            #print(result1)
             #re_data = result1.get()
         return JsonResponse(data={'result':result,'ret':ret}, code="999999", msg="成功")
 
@@ -102,8 +102,11 @@ class WarningHistoryView(APIView):
                 #serializer.data[i]['warning_color'] = warningtype.warning_level
                 serializer.data[i]['warning_name'] = warningevent.warning_name
                 serializer.data[i]['warning_id'] = warningevent.warning_id
-                serializer.data[i]['warning_capture_url'] = settings.FACE_IMG_REAL_ROOT_URL+serializer.data[i]['warning_capture_url'] 
-                serializer.data[i]['warning_video_url'] = settings.FACE_IMG_REAL_ROOT_URL+serializer.data[i]['warning_video_url'] 
+                serializer.data[i]['warning_capture_url'] = settings.FACE_IMG_REAL_ROOT_URL+serializer.data[i]['warning_capture_url']
+                if not serializer.data[i]['warning_video_url']:
+                    serializer.data[i]['warning_video_url'] = ""
+                else:
+                    serializer.data[i]['warning_video_url'] = settings.FACE_IMG_REAL_ROOT_URL+serializer.data[i]['warning_video_url'] 
             return JsonResponse(data={'list':serializer.data}, code="999999", msg="成功")
         
         #默认返回
@@ -129,8 +132,11 @@ class WarningHistoryView(APIView):
             #serializer.data[i]['warning_color'] = warningtype.warning_level
             serializer.data[i]['warning_name'] = warningevent.warning_name
             serializer.data[i]['warning_id'] = warningevent.warning_id
-            serializer.data[i]['warning_capture_url'] = settings.FACE_IMG_REAL_ROOT_URL+serializer.data[i]['warning_capture_url'] 
-            serializer.data[i]['warning_video_url'] = settings.FACE_IMG_REAL_ROOT_URL+serializer.data[i]['warning_video_url'] 
+            serializer.data[i]['warning_capture_url'] = settings.FACE_IMG_REAL_ROOT_URL+serializer.data[i]['warning_capture_url']
+            if not serializer.data[i]['warning_video_url']:
+                serializer.data[i]['warning_video_url'] = ""
+            else:
+                serializer.data[i]['warning_video_url'] = settings.FACE_IMG_REAL_ROOT_URL+serializer.data[i]['warning_video_url'] 
         return JsonResponse(data={'list':serializer.data,'count':len(warninghistoryall)}, code="999999", msg="成功")
 
     @TokenVerify
@@ -152,20 +158,20 @@ class WarningEventView(APIView):
         #if(request.data.__contains__('warning_target_camera')):
         #    request.data['warning_target_camera'] = '.'.join([str(x) for x in request.data['warning_target_camera']])
              
+        print(request.data)
         serializer = WarningEventSerializer(data=request.data)
-        print(request.data['warning_target_camera'].split('.'))
-        if request.data['warning_target_camera']:
-            camera_ids = request.data['warning_target_camera'].split('.')
-            for camera_id in list(camera_ids):
-                camera = Camera.objects.get(id=int(camera_id))
-                if camera.warning_event == None or camera.warning_event == '':
-                    camera.warning_event = request.data['warning_id'] + '.'
-                else:
-                    camera.warning_event = camera.warning_event + request.data['warning_id'] + '.'
-                camera.save()
-        print("now warning event new post!!!!!!!!!!!!!!!!!!!!")
         if serializer.is_valid():
-            serializer.save()
+            warning_e = serializer.save()
+            if request.data['warning_target_camera']:
+                camera_ids = request.data['warning_target_camera'].split('.')
+                for camera_id in list(camera_ids):
+                    if int(camera_id) < 10000:
+                        camera = Camera.objects.get(id=int(camera_id))
+                        if camera.warning_event == None or camera.warning_event == '':
+                            camera.warning_event = str(warning_e.id) + '.'
+                        else:
+                            camera.warning_event = camera.warning_event + str(warning_e.id) + '.'
+                        camera.save()
             return JsonResponse(data={}, code="999999", msg="成功")
         return JsonResponse(data={}, code="-1", msg="操作失败")
 
@@ -180,28 +186,21 @@ class WarningEventView(APIView):
                 camera_ids = warningevent.warning_target_camera.split('.')
                 for camera_id in list(camera_ids):
                     camera = Camera.objects.get(id=int(camera_id))
-                    if warningevent.warning_id in camera.warning_event.split('.'):
-                        camera.warning_event = camera.warning_event.replace(str(warningevent.warning_id)+'.','')
+                    if str(warningevent.id) in camera.warning_event.split('.'):
+                        camera.warning_event = camera.warning_event.replace(str(warningevent.id)+'.','')
                         camera.save()
             warningevent.delete()
         return JsonResponse(data={}, code='999999', msg='成功')
 
     @TokenVerify
     def put(self,request,*args,**kwargs):
-        print('----------------put------------------')
-        print(request.data)
         if(request.data['warning_target_people'] == ""):
-            print('here1')
-            print(request.data['warning_target_people'])
             #request.data['warning_target_people'] = '.'.join([str(x) for x in request.data['warning_target_people']])
             request.data['warning_target_people'] = None
-            print(request.data['warning_target_people'])
         if(request.data['warning_target_car'] == ""):
-            print('here2')
             request.data['warning_target_car'] = None
             #request.data['warning_target_car'] = '.'.join([str(x) for x in request.data['warning_target_car']])
         if(request.data['warning_target_camera'] == ""):
-            print('here3')
             request.data['warning_target_camera'] = None
             #request.data['warning_target_camera'] = '.'.join([str(x) for x in request.data['warning_target_camera']])
         warningevent = WarningEvent.objects.get(pk = request.data['id'])
@@ -243,7 +242,10 @@ class WarningEventView(APIView):
                 serializer.data[i]['warning_target_people_name'] = '无设置'
 
             if(serializer.data[i]['warning_target_car'] != None):
-                serializer.data[i]['warning_target_car_name'] = '设置'
+                plate_id = serializer.data[i]['warning_target_car'].split('.')
+                serializer.data[i]['warning_target_car_name'] = []
+                for x in plate_id:
+                    serializer.data[i]['warning_target_car_name'].append(Plate.objects.get(pk=int(x)).plate_id+'/')
             else:
                 serializer.data[i]['warning_target_car_name'] = '无设置'
 
